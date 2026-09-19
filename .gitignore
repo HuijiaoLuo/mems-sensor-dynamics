@@ -1,0 +1,21 @@
+# MATLAB / Simulink generated files
+slprj/
+*_files/
+*.slxc
+*.asv
+*.m~
+*.autosave
+
+# Local MATLAB data and compiled artifacts
+*.mat
+*.mex*
+*.p
+
+# Keep generated PNG figures in results/ under version control.
+# Ignore only optional interactive figure files.
+results/*.fig
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
