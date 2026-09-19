@@ -19,6 +19,9 @@ from sensor_model import (  # noqa: E402
     step_input,
     system_matrix,
 )
+from capacitive_transduction import (  # noqa: E402
+    capacitive_transduction,
+)
 
 
 def test_input_driven_state_equation() -> None:
@@ -160,3 +163,60 @@ def test_frequency_response_has_second_order_high_frequency_rolloff() -> None:
 
     ratio = abs(response[1]) / abs(response[0])
     assert ratio == pytest.approx(1e-2, rel=2e-2)
+
+
+def test_differential_capacitance_is_zero_at_equilibrium() -> None:
+    result = capacitive_transduction(
+        np.array([0.0]),
+        epsilon=8.8541878128e-12,
+        electrode_area=1e-8,
+        gap=2e-6,
+    )
+
+    np.testing.assert_allclose(result.c1, result.c2, rtol=0, atol=1e-24)
+    np.testing.assert_allclose(result.delta_c, 0.0, rtol=0, atol=1e-24)
+
+
+def test_differential_capacitance_has_odd_symmetry() -> None:
+    displacement = np.array([-0.2e-6, 0.0, 0.2e-6])
+    result = capacitive_transduction(
+        displacement,
+        epsilon=8.8541878128e-12,
+        electrode_area=1e-8,
+        gap=2e-6,
+    )
+
+    np.testing.assert_allclose(result.delta_c[0], -result.delta_c[2])
+    np.testing.assert_allclose(result.c1[0], result.c2[2])
+    np.testing.assert_allclose(result.c2[0], result.c1[2])
+
+
+def test_small_signal_sensitivity_matches_linearization() -> None:
+    epsilon = 8.8541878128e-12
+    area = 1e-8
+    gap = 2e-6
+    displacement = np.array([1e-10])
+    result = capacitive_transduction(
+        displacement,
+        epsilon=epsilon,
+        electrode_area=area,
+        gap=gap,
+    )
+
+    expected_sensitivity = 2.0 * epsilon * area / gap**2
+    np.testing.assert_allclose(result.sensitivity, expected_sensitivity)
+    np.testing.assert_allclose(
+        result.delta_c,
+        result.delta_c_linear,
+        rtol=1e-8,
+    )
+
+
+def test_capacitive_model_rejects_gap_violation() -> None:
+    with pytest.raises(ValueError, match=r"abs\(displacement\) < gap"):
+        capacitive_transduction(
+            np.array([2e-6]),
+            epsilon=8.8541878128e-12,
+            electrode_area=1e-8,
+            gap=2e-6,
+        )

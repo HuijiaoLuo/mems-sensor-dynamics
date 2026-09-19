@@ -1,8 +1,9 @@
 function [t, chain] = signal_chain_reference(params, t)
 %SIGNAL_CHAIN_REFERENCE Evaluate the educational signal chain in MATLAB.
 %
-%   v_ideal = G*x
-%   v_raw   = v_ideal + bias + noise
+%   v_abstract = G*x
+%   v_cap     = G_C*DeltaC(xi)
+%   v_raw     = v_cap + bias + noise
 %   y_cal   = scale*(v_filtered - bias_est)
 %
 % The deterministic random seed makes the generated illustration
@@ -20,12 +21,23 @@ end
 [t_mechanical, state] = reference_model(params);
 x = interp1(t_mechanical, state(:, 1), t, 'linear', 'extrap');
 
+% Convert normalized displacement x into physical proof-mass displacement xi.
+xi = params.capacitance.displacement_scale .* x;
+cap = capacitive_transduction(xi, params.capacitance);
+
+% Keep all three paths visible: the original abstract path, the linearized
+% capacitive approximation, and the exact differential-capacitance path.
+v_abstract = params.transduction_gain .* x;
+v_capacitive_linear = params.capacitance.readout_gain .* ...
+    cap.delta_c_linear;
+v_capacitive = params.capacitance.readout_gain .* cap.delta_c;
+
 previous_rng = rng;
 cleanup_rng = onCleanup(@() rng(previous_rng)); %#ok<NASGU>
 rng(params.noise_seed, 'twister');
 noise = params.noise_amplitude .* randn(size(t));
 
-v_ideal = params.transduction_gain .* x;
+v_ideal = v_capacitive;
 v_raw = v_ideal + params.bias + noise;
 
 v_filtered = zeros(size(t));
@@ -40,8 +52,11 @@ end
 y_cal = params.calibration_scale .* ...
     (v_filtered - params.bias_estimate);
 
-chain = struct('x', x, 'noise', noise, 'v_ideal', v_ideal, ...
+chain = struct('x', x, 'xi', xi, 'noise', noise, ...
+    'c1', cap.c1, 'c2', cap.c2, 'delta_c', cap.delta_c, ...
+    'delta_c_linear', cap.delta_c_linear, 'v_abstract', v_abstract, ...
+    'v_capacitive', v_capacitive, ...
+    'v_capacitive_linear', v_capacitive_linear, 'v_ideal', v_ideal, ...
     'v_raw', v_raw, 'v_filtered', v_filtered, 'y_cal', y_cal);
 
 end
-

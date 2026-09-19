@@ -136,14 +136,18 @@ title(ax, 'Mechanical displacement');
 local_style_axes(ax);
 
 ax = nexttile;
-plot(ax, t_chain, chain.v_ideal, 'LineWidth', 1.1);
+plot(ax, t_chain, chain.v_abstract, '--', 'LineWidth', 1.0);
 hold on;
+plot(ax, t_chain, chain.v_capacitive_linear, 'LineWidth', 1.0);
+plot(ax, t_chain, chain.v_capacitive, 'LineWidth', 1.2);
 plot(ax, t_chain, chain.v_raw, 'LineWidth', 0.8);
 grid on;
 xlabel(ax, 'Time (s)');
 ylabel(ax, 'Signal');
-title(ax, 'Transduction, bias, and additive measurement noise');
-legend(ax, '$v_{\mathrm{ideal}}$', '$v_{\mathrm{raw}}$', ...
+title(ax, 'Abstract and capacitive transduction with measurement noise');
+legend(ax, '$v_{\mathrm{abstract}}=Gx$', ...
+    '$v_{\mathrm{cap,linear}}$', '$v_{\mathrm{cap,exact}}$', ...
+    '$v_{\mathrm{raw}}$', ...
     'Interpreter', 'latex', 'Location', 'best');
 local_style_axes(ax);
 
@@ -174,6 +178,7 @@ local_export(calibrated_figure, fullfile(params.results_dir, ...
     'calibrated_output.png'));
 
 % Analytical frequency response of the normalized mechanical dynamics.
+generate_capacitive_transduction(params);
 generate_frequency_response(params);
 
 if exist(params.model_files.sensor_dynamics, 'file') == 2

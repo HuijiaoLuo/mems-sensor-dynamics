@@ -15,7 +15,18 @@ Then open:
 ~~~matlab
 open_system('models/sensor_dynamics.slx');
 open_system('models/sensor_signal_chain.slx');
+open_system('models/sensor_capacitive_chain.slx');
 ~~~
 
-After inspection, commit the .slx files if you want the generated model binaries included in the GitHub repository. Generated slprj/ and *.slxc files should remain ignored.
+The capacitive-chain model contains the explicit path
 
+```text
+x -> xi -> {d-xi, d+xi} -> {1/(d-xi), 1/(d+xi)}
+  -> {C1, C2} -> Delta C -> readout gain -> bias/noise/filter/calibration
+```
+
+It is the block-diagram counterpart of the equations documented in
+`METHODS.md`. The original `sensor_signal_chain.slx` is retained as the
+abstract `v = G*x` baseline.
+
+After inspection, commit the .slx files if you want the generated model binaries included in the GitHub repository. Generated slprj/ and *.slxc files should remain ignored.

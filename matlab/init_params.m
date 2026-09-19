@@ -28,6 +28,21 @@ params.noise_seed = 7;
 params.lowpass_tau = 0.15;
 params.calibration_scale = 1;
 
+% Simplified differential capacitive transduction parameters.
+% x is normalized, so displacement_scale maps it to physical metres.
+params.capacitance.epsilon = 8.8541878128e-12;  % F/m
+params.capacitance.electrode_area = 1e-8;        % m^2
+params.capacitance.gap = 2e-6;                   % m
+params.capacitance.displacement_scale = 1e-7;    % m per normalized x
+params.capacitance.sensitivity = 2 .* ...
+    params.capacitance.epsilon .* params.capacitance.electrode_area ./ ...
+    params.capacitance.gap.^2;
+% Choose the readout gain so that the linearized capacitive path has the
+% same small-signal gain as the existing abstract v = G*x path.
+params.capacitance.readout_gain = params.transduction_gain ./ ...
+    (params.capacitance.sensitivity .* ...
+    params.capacitance.displacement_scale);
+
 % Frequency-response sweep settings in rad/s.
 params.frequency.omega_min = 1e-2;
 params.frequency.omega_max = 10^1.5;
@@ -37,6 +52,8 @@ params.model_files.sensor_dynamics = fullfile( ...
     repo_root, 'models', 'sensor_dynamics.slx');
 params.model_files.signal_chain = fullfile( ...
     repo_root, 'models', 'sensor_signal_chain.slx');
+params.model_files.capacitive_chain = fullfile( ...
+    repo_root, 'models', 'sensor_capacitive_chain.slx');
 params.results_dir = fullfile(repo_root, 'results');
 
 end

@@ -413,24 +413,117 @@ The model uses the variable-step `ode45` solver with relative tolerance $10^{-6}
 
 The `sensor_signal_chain.slx` model extends the mechanical output with transduction, bias, noise, low-pass filtering, and calibration. The intermediate signals are logged so that each stage can be inspected independently.
 
+The new `sensor_capacitive_chain.slx` variant replaces the abstract transduction gain with explicit blocks for physical displacement, the two electrode gaps, reciprocal operations, electrode capacitances, differential capacitance, and a normalized readout gain. `build_models(params)` creates this additional model when it is absent and leaves existing model files untouched.
+
 ## 9. Signal-chain equations
 
-The reference signal chain uses the following sequence.
+The signal-chain study keeps the original gain model as a useful baseline and adds a simplified differential capacitive model. This makes the approximation visible instead of silently replacing one model with another.
 
 ### Transduction
 
-The ideal sensor signal is a gain applied to displacement:
+The original abstract sensor signal is a gain applied directly to normalized displacement:
 
 ```math
 v_{\mathrm{ideal}}(t)=Gx(t).
 ```
 
-### Bias and measurement noise
-
-The raw measurement is
+Here $x$ is dimensionless in the mechanical model. To introduce physical geometry, define the proof-mass displacement
 
 ```math
-v_{\mathrm{raw}}(t)=v_{\mathrm{ideal}}(t)+b+n(t),
+\xi(t)=\alpha_x x(t),
+```
+
+where $\alpha_x$ is the displacement scale in metres per normalized unit.
+
+### Differential capacitive transduction
+
+For a symmetric proof mass between two fixed electrodes, let $d$ be the nominal gap, $A$ the electrode area, and $\varepsilon$ the permittivity. The exact parallel-plate capacitances are
+
+```math
+C_1(\xi)=\frac{\varepsilon A}{d-\xi},
+\qquad
+C_2(\xi)=\frac{\varepsilon A}{d+\xi},
+\qquad |\xi|<d.
+```
+
+The differential and common-mode capacitances are therefore
+
+```math
+\Delta C=C_1-C_2
+=\frac{2\varepsilon A\xi}{d^2-\xi^2},
+```
+
+```math
+C_{\Sigma}=C_1+C_2
+=\frac{2\varepsilon A d}{d^2-\xi^2}.
+```
+
+The differential quantity is odd in displacement: changing the direction of motion changes the sign of $\Delta C$. The common-mode quantity is even: it changes with the magnitude of displacement but not its sign. The condition $|\xi|<d$ is a geometric validity condition because the proof mass must not close either electrode gap.
+
+### Small-signal linearization
+
+Around the centred position $\xi=0$, use the first-order expansions
+
+```math
+\frac{1}{d-\xi}\approx\frac{1}{d}+\frac{\xi}{d^2},
+\qquad
+\frac{1}{d+\xi}\approx\frac{1}{d}-\frac{\xi}{d^2}.
+```
+
+Subtracting the two expansions gives
+
+```math
+\boxed{\Delta C\approx S_C\xi,
+\qquad
+S_C=\frac{2\varepsilon A}{d^2}.}
+```
+
+The exact result also shows the nonlinear correction directly:
+
+```math
+\Delta C
+=\frac{S_C\xi}{1-(\xi/d)^2}.
+```
+
+Thus, the approximation is accurate when $|\xi|/d\ll1$. The relative correction grows as the displacement approaches the gap, which is why the generated capacitive-transduction figure shows both the central small-signal region and the near-gap nonlinear region.
+
+### From capacitance to a readout voltage
+
+A simplified electrical readout can be represented by a gain $G_C$:
+
+```math
+v_C=G_C\Delta C.
+```
+
+To compare it directly with the old $v=Gx$ path, choose
+
+```math
+G_C=\frac{G}{S_C\alpha_x}.
+```
+
+Then the linearized capacitive path has exactly the same small-signal gain:
+
+```math
+v_{C,\mathrm{linear}}
+=G_C S_C\alpha_x x
+=Gx.
+```
+
+The exact path retains the geometric nonlinearity:
+
+```math
+v_{C,\mathrm{exact}}
+=\frac{Gx}{1-\left(\alpha_x x/d\right)^2}.
+```
+
+In this repository, `signal_chain_reference.m` exposes the abstract, linearized, and exact paths, while the generated capacitive Simulink model implements the exact path with ordinary blocks. The bias, noise, low-pass, and calibration stages then operate on the exact capacitive readout.
+
+### Bias and measurement noise
+
+After transduction, the raw measurement is
+
+```math
+v_{\mathrm{raw}}(t)=v_C(t)+b+n(t),
 ```
 
 where $b$ is a fixed bias and $n(t)$ is zero-mean illustrative noise. The random seed is fixed so that the plotted example is reproducible; it is not a device noise specification.
@@ -472,6 +565,8 @@ where $\hat{b}$ is the estimated bias and $S$ is the calibration scale.
 
 `python/sensor_model.py` implements the same state equation without requiring MATLAB or Simulink. It uses SciPy's ODE tools for numerical integration and exposes the state-space and regime-classification logic used by the Python tests.
 
+`python/capacitive_transduction.py` implements the exact capacitance equations and the small-signal approximation independently of MATLAB. It returns both electrode capacitances, differential capacitance, common-mode capacitance, and the analytical sensitivity $S_C$.
+
 The tests in `tests/python/test_sensor_model.py` check properties rather than only example numbers:
 
 - the input-driven state equation;
@@ -479,7 +574,8 @@ The tests in `tests/python/test_sensor_model.py` check properties rather than on
 - the expected constant-input equilibrium;
 - energy conservation when $r=0$;
 - energy decay when $r>0$;
-- eigenvalue-based regime classification.
+- eigenvalue-based regime classification;
+- zero-output, symmetry, small-signal, and gap-validity properties of the capacitive transducer.
 
 ## 11. MATLAB--Simulink cross-validation
 
@@ -552,6 +648,12 @@ The first panel is the mechanical displacement. The second panel shows the ideal
 
 The calibrated output follows the displacement reference but has a small transient lag introduced by the low-pass filter. The bias compensation removes the configured static bias estimate.
 
+### Differential capacitive transduction
+
+![Exact and linearized differential capacitance](results/capacitive_transduction.png)
+
+The upper panel compares the exact parallel-plate difference $\Delta C$ with its first-order approximation. The dotted markers show the maximum normalized displacement reached by the main step experiment. The lower panel makes the approximation error explicit as a function of $|\xi|/d$: the error is negligible near the centred operating point and increases rapidly as the proof mass approaches an electrode.
+
 ### MATLAB and Simulink comparison
 
 ![MATLAB versus Simulink comparison](results/matlab_vs_simulink.png)
@@ -575,4 +677,4 @@ The generated `.slx` models and `.png` figures are local artifacts produced by t
 
 ## 14. Limitations
 
-This project does not represent nonlinear stiffness, electrostatic actuation, electrical readout physics, packaging, temperature dependence, manufacturing variation, device geometry, or a qualified noise density. The MEMS label indicates the modelling context and signal-chain motivation; the implemented equations remain a normalized educational second-order system.
+The capacitive branch is still an educational lumped model: it does not represent fringing fields, electrostatic force feedback, pull-in dynamics, parasitic capacitance, a charge amplifier, switched-capacitor readout, packaging, temperature dependence, manufacturing variation, or a qualified noise density. The MEMS label indicates the modelling context and signal-chain motivation; the implemented mechanical equations remain a normalized educational second-order system.

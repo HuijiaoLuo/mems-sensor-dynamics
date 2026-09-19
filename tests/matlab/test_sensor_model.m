@@ -62,6 +62,45 @@ verifyLessThan(testCase, response.resonance_frequency, ...
     response.natural_frequency);
 end
 
+function testDifferentialCapacitanceIsZeroAtEquilibrium(testCase)
+params = init_params();
+cap = capacitive_transduction(0, params.capacitance);
+
+verifyEqual(testCase, cap.c1, cap.c2, 'AbsTol', 1e-24);
+verifyEqual(testCase, cap.delta_c, 0, 'AbsTol', 1e-24);
+end
+
+function testDifferentialCapacitanceSymmetry(testCase)
+params = init_params();
+displacement = [-0.2e-6, 0, 0.2e-6];
+cap = capacitive_transduction(displacement, params.capacitance);
+
+verifyEqual(testCase, cap.delta_c(1), -cap.delta_c(3), ...
+    'AbsTol', 1e-24);
+verifyEqual(testCase, cap.c1(1), cap.c2(3), 'AbsTol', 1e-24);
+verifyEqual(testCase, cap.c2(1), cap.c1(3), 'AbsTol', 1e-24);
+end
+
+function testSmallSignalCapacitanceLinearization(testCase)
+params = init_params();
+displacement = 1e-10;
+cap = capacitive_transduction(displacement, params.capacitance);
+
+expected_sensitivity = 2 * params.capacitance.epsilon * ...
+    params.capacitance.electrode_area / params.capacitance.gap^2;
+verifyEqual(testCase, cap.sensitivity, expected_sensitivity, ...
+    'AbsTol', 1e-24);
+verifyEqual(testCase, cap.delta_c, cap.delta_c_linear, ...
+    'RelTol', 1e-8);
+end
+
+function testCapacitanceRejectsGapViolation(testCase)
+params = init_params();
+verifyError(testCase, @() capacitive_transduction( ...
+    params.capacitance.gap, params.capacitance), ...
+    'capacitive_transduction:GapViolation');
+end
+
 function testSimulinkMatchesReferenceWhenAvailable(testCase)
 % This test is skipped on MATLAB installations without Simulink.
 assumeTrue(testCase, license('test', 'Simulink'));
