@@ -16,9 +16,10 @@ cases = get_test_cases();
 % Phase portraits for the six requested dynamic regimes.
 phase_figure = figure('Visible', 'off', 'Color', 'w');
 tiledlayout(2, 3);
+phase_tspan = [0, 6];
 for index = 1:numel(cases)
     rhs = @(time, state) cases(index).A * state;
-    [~, state] = ode45(rhs, [0, 12], [1; 0]);
+    [~, state] = ode45(rhs, phase_tspan, [1; 0]);
     nexttile;
     plot(state(:, 1), state(:, 2), 'LineWidth', 1.1);
     grid on;
@@ -31,7 +32,9 @@ for index = 1:numel(cases)
     % exponent into each tick label for a readable, self-contained axis.
     if strcmp(cases(index).name, 'Unstable node')
         ax = gca;
+        ax.XAxis.Exponent = 0;
         ax.YAxis.Exponent = 0;
+        xtickformat(ax, '%.1e');
         ytickformat(ax, '%.1e');
     end
 end
@@ -49,8 +52,8 @@ for index = 1:numel(cases)
     plot(real(lambda), imag(lambda), 'o', 'MarkerSize', 7, ...
         'DisplayName', cases(index).name);
 end
-xline(0, 'k:');
-yline(0, 'k:');
+xline(0, 'k:', 'HandleVisibility', 'off');
+yline(0, 'k:', 'HandleVisibility', 'off');
 grid on;
 xlabel('Real(lambda)');
 ylabel('Imag(lambda)');
