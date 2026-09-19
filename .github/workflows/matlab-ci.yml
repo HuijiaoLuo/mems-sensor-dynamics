@@ -1,0 +1,34 @@
+name: MATLAB and Simulink CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB and Simulink
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          products: Simulink
+
+      - name: Run MATLAB tests
+        uses: matlab-actions/run-tests@v3
+        with:
+          source-folder: matlab
+          test-results-junit: test-results/matlab-results.xml
+
+      - name: Upload MATLAB test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-test-report
+          path: test-results/matlab-results.xml
+

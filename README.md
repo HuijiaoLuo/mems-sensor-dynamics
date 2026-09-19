@@ -93,6 +93,8 @@ The repository also contains a license-free Python/SciPy implementation of the s
 
 GitHub Actions creates the Conda environment defined in environment.yml and runs these physics and numerical tests on every push and pull request through .github/workflows/python-ci.yml. This gives the repository a continuous-integration backbone without requiring a MATLAB license. MATLAB/Simulink remains the model-based implementation and cross-validation reference.
 
+An additional MATLAB/Simulink workflow is available at .github/workflows/matlab-ci.yml. It is manually triggered because it requires MATLAB and Simulink availability or an appropriate MathWorks license. The MATLAB test suite covers the state equations, steady-state behavior, dynamic-regime labels, and MATLAB/Simulink response agreement.
+
 The open_source/ folder records OpenModelica as future work. It is not part of the current implementation or CI pipeline.
 
 ## Results
@@ -142,6 +144,13 @@ conda env update -f environment.yml --prune
 
 python/requirements.txt is retained as an optional pip-only fallback; Conda is the canonical development and CI environment.
 
+Run the MATLAB tests locally with:
+
+~~~matlab
+results = runtests('tests/matlab', 'IncludeSubfolders', true);
+table(results)
+~~~
+
 Open the generated models with:
 
 ~~~matlab
@@ -182,11 +191,14 @@ mems-sensor-dynamics/
 │   └── requirements.txt
 ├── environment.yml
 ├── tests/
-│   └── python/
-│       └── test_sensor_model.py
+│   ├── python/
+│   │   └── test_sensor_model.py
+│   └── matlab/
+│       └── test_sensor_model.m
 ├── .github/
 │   └── workflows/
-│       └── python-ci.yml
+│       ├── python-ci.yml
+│       └── matlab-ci.yml
 ├── open_source/
 │   └── README.md
 ├── results/                         # generated PNG files
