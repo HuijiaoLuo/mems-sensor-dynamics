@@ -16,6 +16,7 @@ Then open:
 open_system('models/sensor_dynamics.slx');
 open_system('models/sensor_signal_chain.slx');
 open_system('models/sensor_capacitive_chain.slx');
+open_system('models/sensor_readout_frontend.slx');
 ~~~
 
 The capacitive-chain model contains the explicit path
@@ -28,5 +29,9 @@ x -> xi -> {d-xi, d+xi} -> {1/(d-xi), 1/(d+xi)}
 It is the block-diagram counterpart of the equations documented in
 `METHODS.md`. The original `sensor_signal_chain.slx` is retained as the
 abstract `v = G*x` baseline.
+
+The readout-front-end model continues from `Delta C` through an ideal C--V
+gain, offset and noise, a first-order bandwidth limit, amplifier saturation,
+ADC quantization, and digital displacement calibration.
 
 After inspection, commit the .slx files if you want the generated model binaries included in the GitHub repository. Generated slprj/ and *.slxc files should remain ignored.

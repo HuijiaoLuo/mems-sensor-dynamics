@@ -179,6 +179,7 @@ local_export(calibrated_figure, fullfile(params.results_dir, ...
 
 % Analytical frequency response of the normalized mechanical dynamics.
 generate_capacitive_transduction(params);
+generate_readout_frontend(params);
 generate_frequency_response(params);
 
 if exist(params.model_files.sensor_dynamics, 'file') == 2

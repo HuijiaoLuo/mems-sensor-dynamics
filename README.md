@@ -18,6 +18,8 @@ The main demonstration uses a unit step input, zero initial conditions, $k=1.2$,
 
 The signal-chain study now includes a symmetric differential-capacitive transducer. It compares the exact geometry-dependent capacitance with the small-signal approximation that reduces to the original $v=Gx$ model near the centred position.
 
+The next readout layer models an ideal C--V/charge-amplifier interface with offset, noise, finite bandwidth, saturation, ADC quantization, and digital calibration.
+
 ## What is included
 
 - MATLAB reference dynamics and automatically generated Simulink models.
@@ -25,6 +27,7 @@ The signal-chain study now includes a symmetric differential-capacitive transduc
 - Six eigenvalue-based regimes: stable/unstable focus, center, stable/unstable node, and saddle.
 - A transparent signal chain with transduction, bias, deterministic illustrative noise, low-pass filtering, and calibration.
 - A simplified differential-capacitive transducer with exact and linearized readout paths.
+- An ideal capacitive readout front-end with ADC and digital calibration.
 - Python/SciPy equations and physics-aware `pytest` tests.
 - Conda environment definition and GitHub Actions CI.
 - Optional manual MATLAB/Simulink CI for licensed runners.
@@ -40,6 +43,7 @@ The figures in `results/` are generated locally by MATLAB:
 - [Calibrated output](results/calibrated_output.png)
 - [Frequency response](results/frequency_response.png)
 - [Exact versus linearized capacitive transduction](results/capacitive_transduction.png)
+- [Capacitive readout front-end](results/readout_frontend.png)
 - [MATLAB versus Simulink](results/matlab_vs_simulink.png)
 
 ## Quick start
@@ -59,7 +63,7 @@ build_models(params);
 generate_results(params);
 ```
 
-This creates the additional `models/sensor_capacitive_chain.slx` model when it is not already present. Existing Simulink files are kept unchanged.
+This creates the additional `models/sensor_capacitive_chain.slx` and `models/sensor_readout_frontend.slx` models when they are not already present. Existing Simulink files are kept unchanged.
 
 The license-free Python tests use the canonical Conda environment:
 
@@ -83,8 +87,8 @@ mems-sensor-dynamics/
 ├── METHODS.md
 ├── run_demo.m
 ├── models/                 # Simulink models and model notes
-├── matlab/                 # MATLAB reference, transduction, and validation code
-├── python/                 # SciPy dynamics and capacitive reference models
+├── matlab/                 # MATLAB reference, readout, and validation code
+├── python/                 # SciPy dynamics, capacitance, and readout models
 ├── tests/                  # Python and MATLAB tests
 ├── results/                # Locally generated figures
 ├── legacy/                 # Original autonomous oscillator implementation
@@ -94,4 +98,4 @@ mems-sensor-dynamics/
 
 ## Scope
 
-The project does not model a particular device layout, fringing fields, electrostatic actuation, nonlinear stiffness, transistor-level readout, production calibration, packaging, temperature effects, or a qualified noise specification. OpenModelica remains future work under `open_source/`.
+The project does not model a particular device layout, fringing fields, electrostatic actuation, nonlinear stiffness, transistor-level circuits, charge-pump implementation, production calibration, packaging, temperature effects, or a qualified noise specification. OpenModelica remains future work under `open_source/`.

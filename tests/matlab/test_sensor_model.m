@@ -101,6 +101,42 @@ verifyError(testCase, @() capacitive_transduction( ...
     'capacitive_transduction:GapViolation');
 end
 
+function testReadoutFrontendCalibratesSmallSignal(testCase)
+params = init_params();
+t = linspace(0, 1, 101).';
+x_expected = 0.2 .* ones(size(t));
+delta_c = params.capacitance.sensitivity .* ...
+    params.capacitance.displacement_scale .* x_expected;
+
+readout = params.readout;
+readout.noise_amplitude = 0;
+readout.bandwidth_tau = 1e-6;
+readout.adc_bits = 20;
+params.readout = readout;
+frontend = readout_frontend_reference(params, t, delta_c);
+
+verifyEqual(testCase, frontend.x_calibrated(end), 0.2, ...
+    'AbsTol', 1e-4);
+end
+
+function testReadoutFrontendRespectsRailsAndAdcRange(testCase)
+params = init_params();
+t = linspace(0, 1, 11).';
+readout = params.readout;
+readout.noise_amplitude = 0;
+readout.amplifier_max = 1.0;
+readout.adc_max = 1.0;
+params.readout = readout;
+frontend = readout_frontend_reference(params, t, ...
+    [-1e-10; 1e-10 .* ones(10, 1)]);
+
+verifyGreaterThanOrEqual(testCase, min(frontend.v_amplifier), 0);
+verifyLessThanOrEqual(testCase, max(frontend.v_amplifier), 1);
+verifyGreaterThanOrEqual(testCase, min(frontend.adc_code), 0);
+verifyLessThanOrEqual(testCase, max(frontend.adc_code), ...
+    2^params.readout.adc_bits - 1);
+end
+
 function testSimulinkMatchesReferenceWhenAvailable(testCase)
 % This test is skipped on MATLAB installations without Simulink.
 assumeTrue(testCase, license('test', 'Simulink'));

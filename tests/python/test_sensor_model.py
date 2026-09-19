@@ -22,6 +22,7 @@ from sensor_model import (  # noqa: E402
 from capacitive_transduction import (  # noqa: E402
     capacitive_transduction,
 )
+from readout_frontend import readout_frontend  # noqa: E402
 
 
 def test_input_driven_state_equation() -> None:
@@ -219,4 +220,84 @@ def test_capacitive_model_rejects_gap_violation() -> None:
             epsilon=8.8541878128e-12,
             electrode_area=1e-8,
             gap=2e-6,
+        )
+
+
+def test_readout_frontend_calibrates_a_small_signal() -> None:
+    time = np.linspace(0.0, 1.0, 101)
+    sensitivity = 2.0 * 8.8541878128e-12 * 1e-8 / (2e-6) ** 2
+    displacement_scale = 1e-7
+    displacement = np.full(time.shape, 0.2)
+    delta_c = sensitivity * displacement_scale * displacement
+
+    result = readout_frontend(
+        time,
+        delta_c,
+        gain_v_per_f=1e13,
+        offset_voltage=0.05,
+        offset_estimate=0.05,
+        noise_amplitude=0.0,
+        noise_seed=23,
+        bandwidth_tau=1e-6,
+        amplifier_min=0.0,
+        amplifier_max=1.8,
+        adc_bits=20,
+        adc_min=0.0,
+        adc_max=1.8,
+        capacitive_sensitivity=sensitivity,
+        displacement_scale=displacement_scale,
+    )
+
+    np.testing.assert_allclose(
+        result.calibrated_displacement[-1],
+        displacement[-1],
+        atol=1e-4,
+    )
+
+
+def test_readout_frontend_respects_rails_and_adc_range() -> None:
+    time = np.linspace(0.0, 1.0, 11)
+    delta_c = np.array([-1e-10] + [1e-10] * 10)
+    result = readout_frontend(
+        time,
+        delta_c,
+        gain_v_per_f=1e13,
+        offset_voltage=0.0,
+        offset_estimate=0.0,
+        noise_amplitude=0.0,
+        noise_seed=23,
+        bandwidth_tau=0.1,
+        amplifier_min=0.0,
+        amplifier_max=1.0,
+        adc_bits=8,
+        adc_min=0.0,
+        adc_max=1.0,
+        capacitive_sensitivity=1.0,
+        displacement_scale=1.0,
+    )
+
+    assert np.all(result.amplifier_voltage >= 0.0)
+    assert np.all(result.amplifier_voltage <= 1.0)
+    assert np.all(result.adc_code >= 0.0)
+    assert np.all(result.adc_code <= 255.0)
+
+
+def test_readout_frontend_rejects_invalid_adc_configuration() -> None:
+    with pytest.raises(ValueError, match="adc_bits"):
+        readout_frontend(
+            np.array([0.0, 1.0]),
+            np.array([0.0, 0.0]),
+            gain_v_per_f=1.0,
+            offset_voltage=0.0,
+            offset_estimate=0.0,
+            noise_amplitude=0.0,
+            noise_seed=1,
+            bandwidth_tau=1.0,
+            amplifier_min=0.0,
+            amplifier_max=1.0,
+            adc_bits=0,
+            adc_min=0.0,
+            adc_max=1.0,
+            capacitive_sensitivity=1.0,
+            displacement_scale=1.0,
         )

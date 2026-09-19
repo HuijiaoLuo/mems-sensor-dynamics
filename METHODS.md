@@ -518,6 +518,73 @@ v_{C,\mathrm{exact}}
 
 In this repository, `signal_chain_reference.m` exposes the abstract, linearized, and exact paths, while the generated capacitive Simulink model implements the exact path with ordinary blocks. The bias, noise, low-pass, and calibration stages then operate on the exact capacitive readout.
 
+### Capacitive readout front-end
+
+The next system-level layer models the interface between the differential
+capacitance and a digital output. It is intentionally an ideal circuit model,
+not a transistor-level amplifier. The voltage produced by an ideal C--V
+converter or charge-amplifier abstraction is
+
+```math
+v_{\mathrm{sensor}}=G_C\Delta C.
+```
+
+The analogue input to the amplifier includes a static offset and illustrative
+noise:
+
+```math
+v_{\mathrm{in}}
+=v_{\mathrm{sensor}}+V_{\mathrm{offset}}+n(t).
+```
+
+Finite amplifier bandwidth is represented by a first-order transfer function
+
+```math
+H_{\mathrm{amp}}(s)=\frac{1}{\tau_{\mathrm{amp}}s+1}.
+```
+
+The band-limited voltage is then restricted to the amplifier supply rails:
+
+```math
+v_{\mathrm{amp}}
+=\operatorname{sat}\left(v_{\mathrm{bandlimited}},
+V_{\mathrm{min}},V_{\mathrm{max}}\right).
+```
+
+For an $N$-bit ADC with input range $[V_{\mathrm{ADC,min}},V_{\mathrm{ADC,max}}]$,
+the ideal quantization step is
+
+```math
+q_{\mathrm{ADC}}
+=\frac{V_{\mathrm{ADC,max}}-V_{\mathrm{ADC,min}}}{2^N-1}.
+```
+
+The digital code is obtained by clipping the amplifier voltage to the ADC
+range and rounding to the nearest code. The reconstructed voltage is used for
+digital calibration:
+
+```math
+\widehat{\Delta C}
+=\frac{v_{\mathrm{ADC}}-\widehat{V}_{\mathrm{offset}}}{G_C},
+```
+
+```math
+\widehat{x}
+=\frac{\widehat{\Delta C}}{S_C\alpha_x}.
+```
+
+This chain makes the mechanical-to-electrical design trade-off explicit. A
+larger gap $d$ reduces the capacitance sensitivity $S_C$, so the front-end
+needs more voltage gain or a lower-noise input. A higher mechanical $Q$ raises
+the displacement near resonance and may improve detectability, but it can
+also increase the required amplifier linear range. The amplifier bandwidth
+must cover the mechanical signal of interest, the noise floor must be small
+relative to $G_C\Delta C$, and the ADC range and resolution must capture the
+calibrated signal without excessive clipping or quantization error.
+
+The MATLAB implementation is `readout_frontend_reference.m`; the generated
+`sensor_readout_frontend.slx` model maps the same stages to Simulink blocks.
+
 ### Bias and measurement noise
 
 After transduction, the raw measurement is
@@ -567,6 +634,10 @@ where $\hat{b}$ is the estimated bias and $S$ is the calibration scale.
 
 `python/capacitive_transduction.py` implements the exact capacitance equations and the small-signal approximation independently of MATLAB. It returns both electrode capacitances, differential capacitance, common-mode capacitance, and the analytical sensitivity $S_C$.
 
+`python/readout_frontend.py` implements the ideal voltage front-end, finite
+bandwidth, saturation, ADC quantization, and digital displacement calibration
+without requiring a MATLAB license.
+
 The tests in `tests/python/test_sensor_model.py` check properties rather than only example numbers:
 
 - the input-driven state equation;
@@ -575,7 +646,8 @@ The tests in `tests/python/test_sensor_model.py` check properties rather than on
 - energy conservation when $r=0$;
 - energy decay when $r>0$;
 - eigenvalue-based regime classification;
-- zero-output, symmetry, small-signal, and gap-validity properties of the capacitive transducer.
+- zero-output, symmetry, small-signal, and gap-validity properties of the capacitive transducer;
+- rail, ADC-range, and small-signal calibration properties of the readout front-end.
 
 ## 11. MATLAB--Simulink cross-validation
 
@@ -653,6 +725,17 @@ The calibrated output follows the displacement reference but has a small transie
 ![Exact and linearized differential capacitance](results/capacitive_transduction.png)
 
 The upper panel compares the exact parallel-plate difference $\Delta C$ with its first-order approximation. The dotted markers show the maximum normalized displacement reached by the main step experiment. The lower panel makes the approximation error explicit as a function of $|\xi|/d$: the error is negligible near the centred operating point and increases rapidly as the proof mass approaches an electrode.
+
+### Capacitive readout front-end
+
+![Ideal capacitive readout front-end](results/readout_frontend.png)
+
+The first panel shows the ideal voltage generated from $\Delta C$ together with
+offset and illustrative amplifier noise. The second panel shows the effect of
+finite bandwidth and the amplifier rails. The final panel shows the quantized
+ADC code and the digitally calibrated displacement compared with the
+mechanical reference. This figure is a system-level study of front-end
+requirements, not a transistor-level circuit simulation.
 
 ### MATLAB and Simulink comparison
 

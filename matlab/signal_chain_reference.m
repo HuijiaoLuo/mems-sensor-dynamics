@@ -40,6 +40,10 @@ noise = params.noise_amplitude .* randn(size(t));
 v_ideal = v_capacitive;
 v_raw = v_ideal + params.bias + noise;
 
+% Separate mixed-signal front-end study: voltage readout, finite bandwidth,
+% saturation, ADC quantization, and digital calibration.
+frontend = readout_frontend_reference(params, t, cap.delta_c);
+
 v_filtered = zeros(size(t));
 v_filtered(1) = v_raw(1);
 for index = 2:numel(t)
@@ -57,6 +61,7 @@ chain = struct('x', x, 'xi', xi, 'noise', noise, ...
     'delta_c_linear', cap.delta_c_linear, 'v_abstract', v_abstract, ...
     'v_capacitive', v_capacitive, ...
     'v_capacitive_linear', v_capacitive_linear, 'v_ideal', v_ideal, ...
-    'v_raw', v_raw, 'v_filtered', v_filtered, 'y_cal', y_cal);
+    'v_raw', v_raw, 'v_filtered', v_filtered, 'y_cal', y_cal, ...
+    'frontend', frontend);
 
 end

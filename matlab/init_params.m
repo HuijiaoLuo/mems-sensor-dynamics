@@ -43,6 +43,19 @@ params.capacitance.readout_gain = params.transduction_gain ./ ...
     (params.capacitance.sensitivity .* ...
     params.capacitance.displacement_scale);
 
+% Ideal mixed-signal capacitive readout front-end.
+params.readout.gain_v_per_f = 1e13;       % voltage gain [V/F]
+params.readout.offset_voltage = 0.05;     % amplifier input offset [V]
+params.readout.offset_estimate = 0.05;    % digital calibration estimate [V]
+params.readout.noise_amplitude = 5e-4;    % illustrative voltage noise [V]
+params.readout.noise_seed = 23;
+params.readout.bandwidth_tau = 0.25;      % first-order time constant [s]
+params.readout.amplifier_min = 0.0;       % amplifier output rail [V]
+params.readout.amplifier_max = 1.8;       % amplifier output rail [V]
+params.readout.adc_bits = 12;
+params.readout.adc_min = 0.0;
+params.readout.adc_max = 1.8;
+
 % Frequency-response sweep settings in rad/s.
 params.frequency.omega_min = 1e-2;
 params.frequency.omega_max = 10^1.5;
@@ -54,6 +67,8 @@ params.model_files.signal_chain = fullfile( ...
     repo_root, 'models', 'sensor_signal_chain.slx');
 params.model_files.capacitive_chain = fullfile( ...
     repo_root, 'models', 'sensor_capacitive_chain.slx');
+params.model_files.readout_frontend = fullfile( ...
+    repo_root, 'models', 'sensor_readout_frontend.slx');
 params.results_dir = fullfile(repo_root, 'results');
 
 end
