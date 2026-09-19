@@ -22,7 +22,7 @@ jobs:
       - name: Set up Conda environment
         uses: conda-incubator/setup-miniconda@v4
         with:
-          activate-environment: mems-sensor-simulink
+          activate-environment: mems-sensor-dynamics
           environment-file: environment.yml
           auto-activate: true
           channel-priority: strict

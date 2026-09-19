@@ -1,8 +1,18 @@
-# MEMS Sensor Modelling with MATLAB and Simulink
+# Simplified MEMS Sensor Dynamics
 
-This portfolio project presents a simplified MEMS-inspired sensor model using MATLAB and Simulink. It combines normalized mass-spring-damper dynamics, an educational sensor signal chain, stability analysis, and MATLAB/Simulink cross-validation.
+**A cross-tool implementation and verification of a simplified MEMS sensor dynamical model using MATLAB/Simulink and Python/SciPy.**
 
-This is a simplified educational and portfolio model. It is not intended to reproduce the architecture, noise behavior, or calibrated parameters of a commercial MEMS sensor.
+This repository treats one normalized, lumped-parameter mass-spring-damper model as a small scientific-software system. It combines dynamic-system analysis, sensor signal-chain modelling, MATLAB/Simulink cross-validation, physics-aware automated tests, a reproducible Conda environment, and GitHub Actions CI.
+
+This is a simplified educational model. It is not intended to reproduce the architecture, multiphysics, noise behavior, or calibrated parameters of a commercial MEMS device.
+
+## Project Highlights
+
+- Implemented one externally driven sensor model in MATLAB/Simulink and Python/SciPy.
+- Added state-space stability analysis for focus, node, center, and saddle regimes.
+- Built an end-to-end signal chain with transduction, bias, noise, filtering, and calibration.
+- Cross-validated MATLAB and Simulink mechanical responses with maximum-error and RMS metrics.
+- Added physics-aware pytest checks, a reproducible Conda environment, and GitHub Actions CI.
 
 ## Overview
 
@@ -28,23 +38,7 @@ r = c/m,  k = k_s/m,  u = F_ext/m
 
 The main sensor demonstration uses k = 1.2, r = 0.2, zero initial conditions, and a unit step input at t = 1 s. Its expected static displacement is x_ss = 1/k = 0.8333 in normalized units.
 
-## From Harmonic Oscillator to Driven Sensor
-
-The original model is preserved in legacy/harmonic_oscillator_model.m. It represents the autonomous case with no external excitation:
-
-~~~text
-x_dot = y
-y_dot = -k*x - r*y
-~~~
-
-The new matlab/sensor_dynamics_model.m extends the same state equations with a time-dependent input function u_fun(t):
-
-~~~matlab
-u = u_fun(t);
-dydt = u - k*x - r*y;
-~~~
-
-matlab/reference_model.m calls this function directly, so the MATLAB reference implementation and the Simulink step-input model now share the same explicit input-driven dynamics. Setting u_fun = @(t) 0 reproduces the original autonomous oscillator.
+The original autonomous oscillator implementation is retained under legacy/ to document the evolution from an unforced dynamical system to the externally driven sensor model.
 
 ## Simulink Architecture
 
@@ -95,11 +89,11 @@ Expected behavior: the MATLAB and Simulink curves should nearly overlap. Check t
 
 ## Open-Source Reference and CI
 
-The repository also contains a license-free Python/SciPy implementation of the same mechanical equations under python/. Its pytest suite checks the input-driven state equation, the original u = 0 case, step-response steady state, energy conservation for the undamped oscillator, energy reduction with positive damping, and eigenvalue-based regime classification.
+The repository also contains a license-free Python/SciPy implementation of the same mechanical equations under python/. Its physics-aware pytest suite verifies equilibrium behavior, conservation in the undamped regime, dissipative decay under positive damping, and eigenvalue-based stability classification.
 
 GitHub Actions creates the Conda environment defined in environment.yml and runs these physics and numerical tests on every push and pull request through .github/workflows/python-ci.yml. This gives the repository a continuous-integration backbone without requiring a MATLAB license. MATLAB/Simulink remains the model-based implementation and cross-validation reference.
 
-The open_source/ folder records a future OpenModelica extension. The intended long-term goal is to implement the same sensor model in MATLAB/Simulink, Python/SciPy, and OpenModelica, then compare their displacement and velocity signals using common parameters and automated error metrics.
+The open_source/ folder records OpenModelica as future work. It is not part of the current implementation or CI pipeline.
 
 ## Results
 
@@ -136,7 +130,7 @@ Create the Conda environment and run the license-free numerical tests locally wi
 
 ~~~bash
 conda env create -f environment.yml
-conda activate mems-sensor-simulink
+conda activate mems-sensor-dynamics
 python -m pytest tests/python -q
 ~~~
 
@@ -166,7 +160,7 @@ If something fails, send back the complete MATLAB/Simulink error text, MATLAB re
 ## Repository Structure
 
 ~~~text
-mems-sensor-simulink/
+mems-sensor-dynamics/
 ├── README.md
 ├── .gitignore
 ├── run_demo.m

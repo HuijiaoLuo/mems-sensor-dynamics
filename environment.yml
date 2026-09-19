@@ -1,4 +1,4 @@
-name: mems-sensor-simulink
+name: mems-sensor-dynamics
 channels:
   - conda-forge
 dependencies:
@@ -6,4 +6,3 @@ dependencies:
   - numpy>=1.24,<3
   - scipy>=1.10,<2
   - pytest>=7,<9
-
