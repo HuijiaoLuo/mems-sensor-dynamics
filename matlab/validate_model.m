@@ -62,34 +62,50 @@ if exist(params.results_dir, 'dir') ~= 7
     mkdir(params.results_dir);
 end
 
-figure_handle = figure('Visible', 'off', 'Color', 'w');
-tiledlayout(2, 1);
+figure_handle = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1100 760]);
+tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
-nexttile;
-plot(t_common, x_reference_common, 'LineWidth', 1.4);
+ax = nexttile;
+plot(ax, t_common, x_reference_common, 'LineWidth', 1.4);
 hold on;
-plot(t_common, x_simulation_common, '--', 'LineWidth', 1.2);
+plot(ax, t_common, x_simulation_common, '--', 'LineWidth', 1.2);
 grid on;
-xlabel('Time (s)');
-ylabel('Displacement x');
-title('MATLAB reference versus Simulink: x(t)');
-legend('MATLAB / ode45', 'Simulink', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Displacement $x$', 'Interpreter', 'latex');
+title(ax, {'MATLAB reference versus Simulink: $x(t)$', ...
+    sprintf('max abs = %.2e, RMS = %.2e', ...
+    report.max_abs_error_x, report.rms_error_x)}, ...
+    'Interpreter', 'latex');
+legend(ax, 'MATLAB / ode45', 'Simulink', 'Location', 'best');
+local_style_axes(ax);
 
-nexttile;
-plot(t_common, y_reference_common, 'LineWidth', 1.4);
+ax = nexttile;
+plot(ax, t_common, y_reference_common, 'LineWidth', 1.4);
 hold on;
-plot(t_common, y_simulation_common, '--', 'LineWidth', 1.2);
+plot(ax, t_common, y_simulation_common, '--', 'LineWidth', 1.2);
 grid on;
-xlabel('Time (s)');
-ylabel('Velocity y');
-title('MATLAB reference versus Simulink: y(t)');
-legend('MATLAB / ode45', 'Simulink', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Velocity $y$', 'Interpreter', 'latex');
+title(ax, {'MATLAB reference versus Simulink: $y(t)$', ...
+    sprintf('max abs = %.2e, RMS = %.2e', ...
+    report.max_abs_error_y, report.rms_error_y)}, ...
+    'Interpreter', 'latex');
+legend(ax, 'MATLAB / ode45', 'Simulink', 'Location', 'best');
+local_style_axes(ax);
 
 exportgraphics(figure_handle, ...
     fullfile(params.results_dir, 'matlab_vs_simulink.png'), ...
     'Resolution', 150);
 close(figure_handle);
 
+end
+
+function local_style_axes(ax)
+ax.FontName = 'Arial';
+ax.FontSize = 10;
+ax.LineWidth = 0.75;
+ax.Box = 'on';
 end
 
 function [t, data] = local_extract_timeseries(signal)
@@ -104,4 +120,3 @@ else
         'Expected a Timeseries or Structure With Time log.');
 end
 end
-

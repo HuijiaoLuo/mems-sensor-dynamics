@@ -14,100 +14,109 @@ end
 cases = get_test_cases();
 
 % Phase portraits for the six requested dynamic regimes.
-phase_figure = figure('Visible', 'off', 'Color', 'w');
-tiledlayout(2, 3);
+phase_figure = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1100 720]);
+tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 phase_tspan = [0, 6];
 for index = 1:numel(cases)
     rhs = @(time, state) cases(index).A * state;
     [~, state] = ode45(rhs, phase_tspan, [1; 0]);
-    nexttile;
-    plot(state(:, 1), state(:, 2), 'LineWidth', 1.1);
+    ax = nexttile;
+    plot(ax, state(:, 1), state(:, 2), 'LineWidth', 1.1);
     grid on;
-    xlabel('x');
-    ylabel('y');
-    title(cases(index).name);
+    xlabel(ax, 'x');
+    ylabel(ax, 'y');
+    title(ax, cases(index).name);
+    local_style_axes(ax);
 
     % The unstable-node trajectory grows rapidly, so MATLAB may place a
-    % 10^n y-axis offset directly beside the subplot title. Put the
-    % exponent into each tick label for a readable, self-contained axis.
+    % 10^n y-axis offset directly beside the subplot title. Use ordinary
+    % integer tick labels so the scale is readable and self-contained.
     if strcmp(cases(index).name, 'Unstable node')
-        ax = gca;
         ax.XAxis.Exponent = 0;
         ax.YAxis.Exponent = 0;
-        xtickformat(ax, '%.1e');
-        ytickformat(ax, '%.1e');
+        xtickformat(ax, '%.0f');
+        ytickformat(ax, '%.0f');
     end
 end
-sgtitle('Second-order dynamic regimes');
+sgtitle(phase_figure, 'Second-order dynamic regimes');
 local_export(phase_figure, fullfile(params.results_dir, ...
     'phase_portraits.png'));
 
 % Eigenvalue-based damping/stability overview.
-damping_figure = figure('Visible', 'off', 'Color', 'w');
-tiledlayout(2, 1);
-nexttile;
+damping_figure = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1150 800]);
+tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+ax = nexttile;
 hold on;
 for index = 1:numel(cases)
     lambda = cases(index).eigenvalues;
-    plot(real(lambda), imag(lambda), 'o', 'MarkerSize', 7, ...
+    plot(ax, real(lambda), imag(lambda), 'o', 'MarkerSize', 7, ...
         'DisplayName', cases(index).name);
 end
-xline(0, 'k:', 'HandleVisibility', 'off');
-yline(0, 'k:', 'HandleVisibility', 'off');
+xline(ax, 0, 'k:', 'HandleVisibility', 'off');
+yline(ax, 0, 'k:', 'HandleVisibility', 'off');
 grid on;
-xlabel('$\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
-ylabel('$\mathrm{Im}(\lambda)$', 'Interpreter', 'latex');
-title('Eigenvalue locations');
-legend('Location', 'eastoutside');
+xlabel(ax, '$\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
+ylabel(ax, '$\mathrm{Im}(\lambda)$', 'Interpreter', 'latex');
+title(ax, 'Eigenvalue locations');
+legend(ax, 'Location', 'eastoutside');
+local_style_axes(ax);
 
-nexttile;
+ax = nexttile;
 max_real_parts = zeros(1, numel(cases));
 for index = 1:numel(cases)
     max_real_parts(index) = max(real(cases(index).eigenvalues));
 end
-bar(max_real_parts);
+bar(ax, max_real_parts);
 hold on;
-yline(0, 'k:');
+yline(ax, 0, 'k:', 'HandleVisibility', 'off');
 grid on;
-xticks(1:numel(cases));
-xticklabels({cases.name});
-xtickangle(25);
-xlabel('Regime');
-ylabel('$\mathrm{max}\,\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
-title('Stability indicator from eigenvalues');
+xticks(ax, 1:numel(cases));
+xticklabels(ax, {cases.name});
+xtickangle(ax, 25);
+xlabel(ax, 'Regime');
+ylabel(ax, '$\mathrm{max}\,\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
+title(ax, 'Stability indicator from eigenvalues');
+local_style_axes(ax);
 local_export(damping_figure, fullfile(params.results_dir, ...
     'damping_regimes.png'));
 
 % Main sensor step response.
 [t_sensor, state_sensor, u_sensor] = reference_model(params);
-step_figure = figure('Visible', 'off', 'Color', 'w');
-tiledlayout(2, 1);
-nexttile;
-plot(t_sensor, state_sensor(:, 1), 'LineWidth', 1.3);
+step_figure = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1100 760]);
+tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+ax = nexttile;
+plot(ax, t_sensor, state_sensor(:, 1), 'LineWidth', 1.3);
 hold on;
 steady_state = params.input.after / params.k;
-yline(steady_state, 'k--');
-text(t_sensor(end), steady_state, ...
+yline(ax, steady_state, 'k--', 'HandleVisibility', 'off');
+label_index = max(1, round(0.62 * numel(t_sensor)));
+text(ax, t_sensor(label_index), steady_state + 0.06, ...
     '$x_{\mathrm{ss}}=\frac{u}{k}$', ...
     'Interpreter', 'latex', ...
-    'HorizontalAlignment', 'right', ...
+    'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'bottom');
-xline(params.input.step_time, 'k:');
+xline(ax, params.input.step_time, 'k:', 'HandleVisibility', 'off');
 grid on;
-xlabel('Time (s)');
-ylabel('Displacement x');
-title('Normalized MEMS-inspired sensor step response');
-legend('x(t)', 'steady-state reference', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Displacement $x$', 'Interpreter', 'latex');
+title(ax, 'Normalized sensor step response');
+legend(ax, '$x(t)$', 'Interpreter', 'latex', 'Location', 'best');
+local_style_axes(ax);
 
-nexttile;
-plot(t_sensor, u_sensor, 'LineWidth', 1.2);
+ax = nexttile;
+plot(ax, t_sensor, u_sensor, 'LineWidth', 1.2);
 hold on;
-plot(t_sensor, state_sensor(:, 2), 'LineWidth', 1.2);
+plot(ax, t_sensor, state_sensor(:, 2), 'LineWidth', 1.2);
 grid on;
-xlabel('Time (s)');
-ylabel('Input / velocity');
-title('Excitation and velocity');
-legend('u(t)', 'y(t)', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Amplitude');
+title(ax, 'Excitation and velocity');
+legend(ax, '$u(t)$', '$y(t)$', 'Interpreter', 'latex', ...
+    'Location', 'best');
+local_style_axes(ax);
 local_export(step_figure, fullfile(params.results_dir, ...
     'sensor_step_response.png'));
 
@@ -115,43 +124,52 @@ local_export(step_figure, fullfile(params.results_dir, ...
 t_chain = linspace(params.t0, params.tfinal, 2001).';
 [t_chain, chain] = signal_chain_reference(params, t_chain);
 
-chain_figure = figure('Visible', 'off', 'Color', 'w');
-tiledlayout(3, 1);
-nexttile;
-plot(t_chain, chain.x, 'LineWidth', 1.2);
+chain_figure = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1100 900]);
+tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+ax = nexttile;
+plot(ax, t_chain, chain.x, 'LineWidth', 1.2);
 grid on;
-xlabel('Time (s)');
-ylabel('x');
-title('Mechanical displacement');
+xlabel(ax, 'Time (s)');
+ylabel(ax, '$x$', 'Interpreter', 'latex');
+title(ax, 'Mechanical displacement');
+local_style_axes(ax);
 
-nexttile;
-plot(t_chain, chain.v_ideal, 'LineWidth', 1.1);
+ax = nexttile;
+plot(ax, t_chain, chain.v_ideal, 'LineWidth', 1.1);
 hold on;
-plot(t_chain, chain.v_raw, 'LineWidth', 0.8);
+plot(ax, t_chain, chain.v_raw, 'LineWidth', 0.8);
 grid on;
-xlabel('Time (s)');
-ylabel('Signal');
-title('Transduction, bias, and additive measurement noise');
-legend('v_ideal', 'v_raw', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Signal');
+title(ax, 'Transduction, bias, and additive measurement noise');
+legend(ax, '$v_{\mathrm{ideal}}$', '$v_{\mathrm{raw}}$', ...
+    'Interpreter', 'latex', 'Location', 'best');
+local_style_axes(ax);
 
-nexttile;
-plot(t_chain, chain.v_filtered, 'LineWidth', 1.2);
+ax = nexttile;
+plot(ax, t_chain, chain.v_filtered, 'LineWidth', 1.2);
 grid on;
-xlabel('Time (s)');
-ylabel('Filtered signal');
-title('First-order low-pass filter output');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Filtered signal');
+title(ax, 'First-order low-pass filter output');
+local_style_axes(ax);
 local_export(chain_figure, fullfile(params.results_dir, ...
     'signal_chain.png'));
 
-calibrated_figure = figure('Visible', 'off', 'Color', 'w');
-plot(t_chain, chain.y_cal, 'LineWidth', 1.3);
+calibrated_figure = figure('Visible', 'off', 'Color', 'w', ...
+    'Position', [100 100 1100 500]);
+ax = axes(calibrated_figure);
+plot(ax, t_chain, chain.y_cal, 'LineWidth', 1.3);
 hold on;
-plot(t_chain, chain.x, '--', 'LineWidth', 1.0);
+plot(ax, t_chain, chain.x, '--', 'LineWidth', 1.0);
 grid on;
-xlabel('Time (s)');
-ylabel('Output');
-title('Calibrated output versus normalized displacement');
-legend('y_cal', 'x reference', 'Location', 'best');
+xlabel(ax, 'Time (s)');
+ylabel(ax, 'Normalized output');
+title(ax, 'Calibrated output and displacement reference');
+legend(ax, '$y_{\mathrm{cal}}$', '$x(t)$', 'Interpreter', 'latex', ...
+    'Location', 'best');
+local_style_axes(ax);
 local_export(calibrated_figure, fullfile(params.results_dir, ...
     'calibrated_output.png'));
 
@@ -170,4 +188,11 @@ end
 function local_export(figure_handle, output_file)
 exportgraphics(figure_handle, output_file, 'Resolution', 150);
 close(figure_handle);
+end
+
+function local_style_axes(ax)
+ax.FontName = 'Arial';
+ax.FontSize = 10;
+ax.LineWidth = 0.75;
+ax.Box = 'on';
 end
