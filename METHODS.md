@@ -547,9 +547,13 @@ The band-limited voltage is then restricted to the amplifier supply rails:
 
 ```math
 v_{\mathrm{amp}}
-=\operatorname{sat}\left(v_{\mathrm{bandlimited}},
-V_{\mathrm{min}},V_{\mathrm{max}}\right).
+=\min\left(\max\left(v_{\mathrm{bandlimited}},V_{\mathrm{min}}\right),
+V_{\mathrm{max}}\right).
 ```
+
+This nested `max`--`min` expression is the saturation operation: it first
+prevents the voltage from falling below $V_{\mathrm{min}}$, then prevents it
+from exceeding $V_{\mathrm{max}}$.
 
 For an $N$-bit ADC with input range $[V_{\mathrm{ADC,min}},V_{\mathrm{ADC,max}}]$,
 the ideal quantization step is
