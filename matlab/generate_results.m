@@ -25,6 +25,15 @@ for index = 1:numel(cases)
     xlabel('x');
     ylabel('y');
     title(cases(index).name);
+
+    % The unstable-node trajectory grows rapidly, so MATLAB may place a
+    % 10^n y-axis offset directly beside the subplot title. Put the
+    % exponent into each tick label for a readable, self-contained axis.
+    if strcmp(cases(index).name, 'Unstable node')
+        ax = gca;
+        ax.YAxis.Exponent = 0;
+        ytickformat(ax, '%.1e');
+    end
 end
 sgtitle('Second-order dynamic regimes');
 local_export(phase_figure, fullfile(params.results_dir, ...
@@ -153,4 +162,3 @@ function local_export(figure_handle, output_file)
 exportgraphics(figure_handle, output_file, 'Resolution', 150);
 close(figure_handle);
 end
-
