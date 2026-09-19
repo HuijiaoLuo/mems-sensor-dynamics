@@ -20,30 +20,30 @@ The model is deliberately small enough that the same equations can be inspected 
 
 Starting from a linear mass-spring-damper system,
 
-$$
+```math
 m\ddot{x}+c\dot{x}+k_sx=F_{\mathrm{ext}}(t),
-$$
+```
 
 divide by the mass $m$:
 
-$$
+```math
 \ddot{x}+\frac{c}{m}\dot{x}+\frac{k_s}{m}x
 =\frac{F_{\mathrm{ext}}(t)}{m}.
-$$
+```
 
 Define the normalized coefficients and input
 
-$$
+```math
 r=\frac{c}{m},\qquad
 k=\frac{k_s}{m},\qquad
 u(t)=\frac{F_{\mathrm{ext}}(t)}{m}.
-$$
+```
 
 The equation implemented in the repository is therefore
 
-$$
+```math
 \boxed{\ddot{x}+r\dot{x}+kx=u(t).}
-$$
+```
 
 This is a linear time-invariant model when $u(t)$ is prescribed independently of the state.
 
@@ -51,50 +51,47 @@ This is a linear time-invariant model when $u(t)$ is prescribed independently of
 
 Introduce the state vector
 
-$$
+```math
 \mathbf{z}(t)=
-\begin{bmatrix}
-x(t)\\
-y(t)
-\end{bmatrix},
+\left[\begin{array}{c}x(t)\\y(t)\end{array}\right],
 \qquad y(t)=\dot{x}(t).
-$$
+```
 
 The two first-order equations follow directly:
 
-$$
+```math
 \dot{x}=y,
-$$
+```
 
 and
 
-$$
+```math
 \dot{y}=\ddot{x}=u(t)-kx-ry.
-$$
+```
 
 Thus,
 
-$$
+```math
 \boxed{
 \dot{\mathbf{z}}=A\mathbf{z}+B u(t)
 }
-$$
+```
 
 with
 
-$$
-A=\begin{bmatrix}0&1\\-k&-r\end{bmatrix},
+```math
+A=\left[\begin{array}{cc}0&1\\-k&-r\end{array}\right],
 \qquad
-B=\begin{bmatrix}0\\1\end{bmatrix}.
-$$
+B=\left[\begin{array}{c}0\\1\end{array}\right].
+```
 
 The Simulink state-space block uses
 
-$$
-C=\begin{bmatrix}1&0\\0&1\end{bmatrix},
+```math
+C=\left[\begin{array}{cc}1&0\\0&1\end{array}\right],
 \qquad
-D=\begin{bmatrix}0\\0\end{bmatrix},
-$$
+D=\left[\begin{array}{c}0\\0\end{array}\right],
+```
 
 so its two outputs are exactly $x(t)$ and $y(t)$.
 
@@ -102,47 +99,49 @@ so its two outputs are exactly $x(t)$ and $y(t)$.
 
 The main experiment uses
 
-$$
+```math
 k=1.2,\qquad r=0.2,
-$$
+```
 
 with initial conditions
 
-$$
+```math
 x(0)=0,\qquad y(0)=0.
-$$
+```
 
 The input is a unit step at $t_s=1\ \mathrm{s}$:
 
-$$
+```math
 u(t)=
-\begin{cases}
+\left\{
+\begin{array}{ll}
 0, & t<t_s,\\
 1, & t\geq t_s.
-\end{cases}
-$$
+\end{array}
+\right.
+```
 
 For a constant input $u_0$ at equilibrium, set both derivatives to zero:
 
-$$
+```math
 0=y_{\mathrm{ss}},
 \qquad
 0=u_0-kx_{\mathrm{ss}}-r y_{\mathrm{ss}}.
-$$
+```
 
 Therefore,
 
-$$
+```math
 \boxed{x_{\mathrm{ss}}=\frac{u_0}{k}},
 \qquad
 y_{\mathrm{ss}}=0.
-$$
+```
 
 For the unit step used here,
 
-$$
+```math
 x_{\mathrm{ss}}=\frac{1}{1.2}\approx0.8333.
-$$
+```
 
 The damping is positive but small, so the response is stable and underdamped. It overshoots before approaching the equilibrium value.
 
@@ -150,27 +149,27 @@ The damping is positive but small, so the response is stable and underdamped. It
 
 For the unforced diagnostic experiments, $u(t)=0$. The eigenvalues are the roots of
 
-$$
+```math
 \det(\lambda I-A)=0,
-$$
+```
 
 which gives
 
-$$
+```math
 \lambda^2+r\lambda+k=0.
-$$
+```
 
 Equivalently,
 
-$$
+```math
 \lambda_{1,2}=\frac{-r\pm\sqrt{r^2-4k}}{2}.
-$$
+```
 
 The discriminant
 
-$$
+```math
 \Delta=r^2-4k
-$$
+```
 
 determines whether the eigenvalues are real or complex. Their real parts determine growth or decay:
 
@@ -185,9 +184,9 @@ determines whether the eigenvalues are real or complex. Their real parts determi
 
 The code in `matlab/get_test_cases.m` computes the eigenvalues numerically and applies this classification. The plotted phase portraits start from
 
-$$
+```math
 x(0)=1,\qquad y(0)=0,
-$$
+```
 
 over a diagnostic interval from $0$ to $6\ \mathrm{s}$. These initial conditions are intentionally different from the main sensor experiment so that the trajectories are visible.
 
@@ -217,9 +216,9 @@ The MATLAB implementation is split by responsibility:
 
 The step input is discontinuous at $t_s=1\ \mathrm{s}$. To avoid allowing an adaptive solver step to cross that discontinuity, `reference_model.m` integrates in two intervals:
 
-$$
+```math
 [0,t_s]\quad\text{and}\quad[t_s,t_f].
-$$
+```
 
 The final state of the first interval is used as the initial state of the second interval. This preserves state continuity while giving each integration interval a constant input.
 
@@ -237,9 +236,9 @@ Step input u(t) -> State-Space block -> Demux -> x(t), y(t)
 
 The State-Space block contains the same matrices $A$, $B$, $C$, and $D$ defined above, with initial state
 
-$$
-\mathbf{z}(0)=\begin{bmatrix}0\\0\end{bmatrix}.
-$$
+```math
+\mathbf{z}(0)=\left[\begin{array}{c}0\\0\end{array}\right].
+```
 
 The model uses the variable-step `ode45` solver with relative tolerance $10^{-6}$ and absolute tolerance $10^{-8}$.
 
@@ -255,17 +254,17 @@ The reference signal chain uses the following sequence.
 
 The ideal sensor signal is a gain applied to displacement:
 
-$$
+```math
 v_{\mathrm{ideal}}(t)=Gx(t).
-$$
+```
 
 ### Bias and measurement noise
 
 The raw measurement is
 
-$$
+```math
 v_{\mathrm{raw}}(t)=v_{\mathrm{ideal}}(t)+b+n(t),
-$$
+```
 
 where $b$ is a fixed bias and $n(t)$ is zero-mean illustrative noise. The random seed is fixed so that the plotted example is reproducible; it is not a device noise specification.
 
@@ -273,21 +272,21 @@ where $b$ is a fixed bias and $n(t)$ is zero-mean illustrative noise. The random
 
 The Simulink signal-chain model uses the continuous transfer function
 
-$$
+```math
 H(s)=\frac{1}{\tau s+1}.
-$$
+```
 
 For the MATLAB reference plot, the filter is evaluated on a uniform time grid using the update
 
-$$
+```math
 \alpha_n=\frac{\Delta t_n}{\tau+\Delta t_n},
-$$
+```
 
-$$
+```math
 v_{\mathrm{filtered}}[n]
 =v_{\mathrm{filtered}}[n-1]
 +\alpha_n\left(v_{\mathrm{raw}}[n]-v_{\mathrm{filtered}}[n-1]\right).
-$$
+```
 
 This is a transparent discrete approximation used for the illustrative signal-chain figure. The primary MATLAB/Simulink numerical validation concerns the mechanical states $x(t)$ and $y(t)$.
 
@@ -295,10 +294,10 @@ This is a transparent discrete approximation used for the illustrative signal-ch
 
 The final output is
 
-$$
+```math
 y_{\mathrm{cal}}(t)
 =S\left(v_{\mathrm{filtered}}(t)-\hat{b}\right),
-$$
+```
 
 where $\hat{b}$ is the estimated bias and $S$ is the calibration scale.
 
@@ -319,28 +318,28 @@ The tests in `tests/python/test_sensor_model.py` check properties rather than on
 
 `validate_model.m` obtains the MATLAB reference trajectory and the logged Simulink trajectories. Because the two variable-step solvers generally return different time grids, both trajectories are linearly interpolated onto a common vector
 
-$$
+```math
 t_1,t_2,\ldots,t_N.
-$$
+```
 
 For each state, the pointwise errors are
 
-$$
+```math
 e_x(t_i)=x_{\mathrm{MATLAB}}(t_i)-x_{\mathrm{Simulink}}(t_i),
-$$
+```
 
-$$
+```math
 e_y(t_i)=y_{\mathrm{MATLAB}}(t_i)-y_{\mathrm{Simulink}}(t_i).
-$$
+```
 
 The reported maximum absolute and root-mean-square errors are
 
-$$
+```math
 E_{\infty,x}=\max_i|e_x(t_i)|,
 \qquad
 E_{\mathrm{RMS},x}
 =\sqrt{\frac{1}{N}\sum_{i=1}^{N}e_x(t_i)^2},
-$$
+```
 
 with the same definitions for $y$. These metrics quantify agreement between two numerical implementations; they are not physical measurement uncertainty.
 

@@ -10,9 +10,9 @@ The model is educational and intentionally simplified. It is not a calibrated mu
 
 The mechanical dynamics are
 
-$$
+```math
 \dot{x}=y,\qquad \dot{y}=u(t)-kx-ry.
-$$
+```
 
 The main demonstration uses a unit step input, zero initial conditions, $k=1.2$, and $r=0.2$. The detailed derivation, implementation mapping, and figure interpretation are in [METHODS.md](METHODS.md).
 
