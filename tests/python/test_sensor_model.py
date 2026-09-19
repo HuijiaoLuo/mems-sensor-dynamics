@@ -11,6 +11,8 @@ sys.path.insert(0, str(PYTHON_DIR))
 
 from sensor_model import (  # noqa: E402
     classify_dynamics,
+    frequency_response,
+    frequency_response_metrics,
     mechanical_energy,
     sensor_dynamics,
     simulate,
@@ -116,3 +118,45 @@ def test_system_matrix_matches_model_definition() -> None:
         system_matrix(k=1.2, r=0.2),
         np.array([[0.0, 1.0], [-1.2, -0.2]]),
     )
+
+
+def test_frequency_response_matches_static_gain_at_zero_frequency() -> None:
+    response = frequency_response(np.array([0.0]), k=1.2, r=0.2)
+
+    np.testing.assert_allclose(response[0], 1.0 / 1.2, atol=1e-12)
+
+
+def test_frequency_response_has_a_resonance_peak() -> None:
+    metrics = frequency_response_metrics(k=1.2, r=0.2)
+    response_at_resonance = frequency_response(
+        np.array([metrics.resonance_frequency]),
+        k=1.2,
+        r=0.2,
+    )
+
+    assert 0.0 < metrics.resonance_frequency < metrics.natural_frequency
+    assert metrics.resonance_magnitude > metrics.static_gain
+    np.testing.assert_allclose(
+        abs(response_at_resonance[0]),
+        metrics.resonance_magnitude,
+        rtol=1e-12,
+    )
+
+
+def test_frequency_response_metrics_match_damping_parameters() -> None:
+    metrics = frequency_response_metrics(k=1.2, r=0.2)
+
+    np.testing.assert_allclose(metrics.natural_frequency, np.sqrt(1.2))
+    np.testing.assert_allclose(
+        metrics.damping_ratio,
+        0.2 / (2.0 * np.sqrt(1.2)),
+    )
+    np.testing.assert_allclose(metrics.quality_factor, np.sqrt(1.2) / 0.2)
+    np.testing.assert_allclose(metrics.bandwidth_approx, 0.2)
+
+
+def test_frequency_response_has_second_order_high_frequency_rolloff() -> None:
+    response = frequency_response(np.array([10.0, 100.0]), k=1.2, r=0.2)
+
+    ratio = abs(response[1]) / abs(response[0])
+    assert ratio == pytest.approx(1e-2, rel=2e-2)

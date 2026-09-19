@@ -12,6 +12,7 @@ in GitHub Actions and act as an open reference implementation.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,10 +23,83 @@ FloatArray = NDArray[np.float64]
 InputFunction = Callable[[float], float]
 
 
+@dataclass(frozen=True)
+class FrequencyResponseMetrics:
+    """Characteristic frequencies and gains of the normalized resonator."""
+
+    natural_frequency: float
+    damping_ratio: float
+    quality_factor: float
+    resonance_frequency: float
+    resonance_magnitude: float
+    static_gain: float
+    bandwidth_approx: float
+
+
 def system_matrix(k: float, r: float) -> FloatArray:
     """Return A for the unforced state-space system."""
 
     return np.array([[0.0, 1.0], [-k, -r]], dtype=float)
+
+
+def frequency_response(
+    omega: FloatArray,
+    *,
+    k: float,
+    r: float,
+) -> NDArray[np.complex128]:
+    """Return H(j*omega) = X/U for the normalized mechanical model.
+
+    The transfer function follows from zero-initial-condition Laplace
+    analysis:
+
+        H(s) = 1 / (s**2 + r*s + k)
+
+    and s = j*omega for sinusoidal steady-state response.
+    """
+
+    omega_array = np.asarray(omega, dtype=float)
+    if np.any(omega_array < 0.0):
+        raise ValueError("Angular frequency must be non-negative.")
+
+    denominator = k - omega_array**2 + 1j * r * omega_array
+    return 1.0 / denominator
+
+
+def frequency_response_metrics(
+    *,
+    k: float,
+    r: float,
+) -> FrequencyResponseMetrics:
+    """Return natural-frequency, damping, resonance, and Q-factor metrics."""
+
+    if k <= 0.0:
+        raise ValueError("Frequency-response metrics require k > 0.")
+
+    natural_frequency = float(np.sqrt(k))
+    damping_ratio = float(r / (2.0 * natural_frequency))
+    quality_factor = float(natural_frequency / r) if r > 0.0 else float("inf")
+    static_gain = float(1.0 / k)
+    bandwidth_approx = float(r) if r > 0.0 else 0.0
+
+    if r > 0.0 and r**2 < 2.0 * k:
+        resonance_frequency = float(np.sqrt(k - 0.5 * r**2))
+        resonance_magnitude = float(
+            1.0 / (r * np.sqrt(k - 0.25 * r**2))
+        )
+    else:
+        resonance_frequency = float("nan")
+        resonance_magnitude = float("nan")
+
+    return FrequencyResponseMetrics(
+        natural_frequency=natural_frequency,
+        damping_ratio=damping_ratio,
+        quality_factor=quality_factor,
+        resonance_frequency=resonance_frequency,
+        resonance_magnitude=resonance_magnitude,
+        static_gain=static_gain,
+        bandwidth_approx=bandwidth_approx,
+    )
 
 
 def step_input(
@@ -112,4 +186,3 @@ def mechanical_energy(
     """Return normalized mechanical energy for k > 0."""
 
     return 0.5 * velocity**2 + 0.5 * k * displacement**2
-

@@ -142,7 +142,177 @@ x_{\mathrm{ss}}=\frac{1}{1.2}\approx0.8333.
 
 The damping is positive but small, so the response is stable and underdamped. It overshoots before approaching the equilibrium value.
 
-## 5. Dynamic-regime classification
+## 5. Laplace transform and frequency response
+
+The step response describes how the sensor evolves in time. Frequency-response analysis asks a complementary question: how strongly does the sensor respond to a sinusoidal input at each frequency?
+
+### 5.1 Laplace-domain derivation
+
+Start with the normalized mechanical equation:
+
+```math
+\ddot{x}(t)+r\dot{x}(t)+kx(t)=u(t).
+```
+
+Let $X(s)$ and $U(s)$ denote the Laplace transforms of $x(t)$ and $u(t)$. The derivative rules are
+
+```math
+\mathcal{L}\{\dot{x}(t)\}=sX(s)-x(0),
+```
+
+```math
+\mathcal{L}\{\ddot{x}(t)\}=s^2X(s)-sx(0)-y(0),
+```
+
+where $y(0)=\dot{x}(0)$. Applying the transform gives
+
+```math
+s^2X(s)-sx(0)-y(0)+r\left[sX(s)-x(0)\right]+kX(s)=U(s).
+```
+
+Collect the terms containing $X(s)$:
+
+```math
+\left(s^2+rs+k\right)X(s)
+=U(s)+(s+r)x(0)+y(0).
+```
+
+For the main sensor experiment, $x(0)=0$ and $y(0)=0$. Therefore,
+
+```math
+\left(s^2+rs+k\right)X(s)=U(s).
+```
+
+The transfer function from normalized input to displacement is
+
+```math
+H_x(s)=\frac{X(s)}{U(s)}=\frac{1}{s^2+rs+k}.
+```
+
+This transfer function describes the system dynamics independently of the particular input waveform. The step response and the frequency response are two different ways of interrogating the same $H_x(s)$.
+
+### 5.2 Sinusoidal steady-state response
+
+For a sinusoidal input
+
+```math
+u(t)=A\sin(\omega t),
+```
+
+the steady-state response is obtained by evaluating the transfer function on the imaginary axis:
+
+```math
+H_x(j\omega)=\frac{1}{k-\omega^2+jr\omega}.
+```
+
+The complex response contains both amplitude scaling and phase shift. The displacement amplitude is
+
+```math
+|H_x(j\omega)|=\frac{1}{\sqrt{\left(k-\omega^2\right)^2+\left(r\omega\right)^2}}.
+```
+
+The output amplitude is therefore
+
+```math
+|X|=|H_x(j\omega)|A.
+```
+
+The phase lag is
+
+```math
+\phi(\omega)=\arg H_x(j\omega)
+=-\mathrm{atan2}\left(r\omega,\ k-\omega^2\right).
+```
+
+The implementation stores this complex quantity directly, then computes `abs(H)` for the magnitude and `angle(H)` for the phase.
+
+### 5.3 Natural frequency, damping ratio, and quality factor
+
+Define the natural angular frequency and damping ratio by
+
+```math
+\omega_n=\sqrt{k},
+\qquad
+\zeta=\frac{r}{2\sqrt{k}}.
+```
+
+Then the transfer function can be written in the standard second-order form
+
+```math
+H_x(s)=\frac{1}{k}\frac{\omega_n^2}
+{s^2+2\zeta\omega_n s+\omega_n^2}.
+```
+
+For a lightly damped resonator, the quality factor is approximately
+
+```math
+Q=\frac{1}{2\zeta}=\frac{\omega_n}{r}=\frac{\sqrt{k}}{r}.
+```
+
+For the current parameters,
+
+```math
+\omega_n=\sqrt{1.2}\approx1.0954\ \mathrm{rad/s},
+```
+
+```math
+\zeta=\frac{0.2}{2\sqrt{1.2}}\approx0.0913,
+\qquad
+Q\approx5.48.
+```
+
+The ordinary frequency corresponding to $\omega_n$ is
+
+```math
+f_n=\frac{\omega_n}{2\pi}\approx0.1743\ \mathrm{Hz}.
+```
+
+### 5.4 Resonance and bandwidth
+
+When $r>0$ and $\zeta<1/\sqrt{2}$, the magnitude has a finite resonance peak at
+
+```math
+\omega_r=\omega_n\sqrt{1-2\zeta^2}
+=\sqrt{k-\frac{r^2}{2}}.
+```
+
+The corresponding peak magnitude is
+
+```math
+|H_x(j\omega_r)|
+=\frac{1}{r\sqrt{k-r^2/4}}.
+```
+
+The zero-frequency gain is the static displacement gain:
+
+```math
+|H_x(0)|=\frac{1}{k}.
+```
+
+For light damping, the half-power bandwidth around the resonance is approximately
+
+```math
+\Delta\omega\approx r,
+```
+
+so that
+
+```math
+Q\approx\frac{\omega_n}{\Delta\omega}.
+```
+
+This gives the physical interpretation of $Q$: a high-$Q$ resonator stores energy for many cycles, has a narrow resonance peak, and is more selective in frequency. A low-$Q$ resonator loses energy quickly, has a broader and lower peak, and responds over a wider frequency range.
+
+### 5.5 Physical interpretation across frequency
+
+- **Low frequency:** the spring term dominates. The sensor follows the input quasi-statically, so $x\approx u/k$.
+- **Near resonance:** inertial and spring effects nearly balance, allowing the oscillation amplitude to build. Damping controls how high the peak becomes.
+- **High frequency:** inertia dominates. The displacement magnitude decays approximately as $1/\omega^2$, and the phase approaches $-180^\circ$.
+- **Damping:** positive $r$ removes mechanical energy, limits the resonance peak, and widens the response. Negative $r$ represents an active or unstable diagnostic case that injects energy.
+
+The frequency-response implementation in `matlab/frequency_response.m` and `python/sensor_model.py` evaluates these equations directly. `matlab/generate_frequency_response.m` creates the magnitude and phase figure.
+
+## 6. Dynamic-regime classification
 
 For the unforced diagnostic experiments, $u(t)=0$. The eigenvalues are the roots of
 
@@ -200,7 +370,7 @@ The six parameter sets are:
 
 These are analysis cases rather than physically calibrated operating points for the sensor.
 
-## 6. MATLAB reference implementation
+## 7. MATLAB reference implementation
 
 The MATLAB implementation is split by responsibility:
 
@@ -219,7 +389,7 @@ The step input is discontinuous at $t_s=1\ \mathrm{s}$. To avoid allowing an ada
 
 The final state of the first interval is used as the initial state of the second interval. This preserves state continuity while giving each integration interval a constant input.
 
-## 7. Simulink implementation
+## 8. Simulink implementation
 
 `matlab/build_models.m` creates two models when run locally with Simulink:
 
@@ -243,7 +413,7 @@ The model uses the variable-step `ode45` solver with relative tolerance $10^{-6}
 
 The `sensor_signal_chain.slx` model extends the mechanical output with transduction, bias, noise, low-pass filtering, and calibration. The intermediate signals are logged so that each stage can be inspected independently.
 
-## 8. Signal-chain equations
+## 9. Signal-chain equations
 
 The reference signal chain uses the following sequence.
 
@@ -298,7 +468,7 @@ y_{\mathrm{cal}}(t)
 
 where $\hat{b}$ is the estimated bias and $S$ is the calibration scale.
 
-## 9. Python/SciPy implementation
+## 10. Python/SciPy implementation
 
 `python/sensor_model.py` implements the same state equation without requiring MATLAB or Simulink. It uses SciPy's ODE tools for numerical integration and exposes the state-space and regime-classification logic used by the Python tests.
 
@@ -311,7 +481,7 @@ The tests in `tests/python/test_sensor_model.py` check properties rather than on
 - energy decay when $r>0$;
 - eigenvalue-based regime classification.
 
-## 10. MATLAB--Simulink cross-validation
+## 11. MATLAB--Simulink cross-validation
 
 `validate_model.m` obtains the MATLAB reference trajectory and the logged Simulink trajectories. Because the two variable-step solvers generally return different time grids, both trajectories are linearly interpolated onto a common vector
 
@@ -342,7 +512,7 @@ with the same definitions for $y$. These metrics quantify agreement between two 
 
 Small nonzero values are expected because the solvers use adaptive internal time steps and the comparison applies interpolation. The generated comparison figure records the actual values from the local MATLAB/Simulink run rather than embedding assumed results in the repository.
 
-## 11. Reading the generated results
+## 12. Reading the generated results
 
 The following figures are generated by `matlab/generate_results.m` after running the local MATLAB/Simulink workflow.
 
@@ -357,6 +527,12 @@ The horizontal axis is displacement $x$ and the vertical axis is velocity $y$. T
 ![Eigenvalue locations and stability indicator](results/damping_regimes.png)
 
 The upper plot places the eigenvalues in the complex plane. The lower plot shows $\mathrm{max}\,\mathrm{Re}(\lambda)$ for each regime: negative values indicate decay, zero indicates marginal behavior, and positive values indicate instability.
+
+### Frequency response
+
+![Frequency response of the normalized resonator](results/frequency_response.png)
+
+The magnitude plot shows the static low-frequency gain, the resonant amplification near $\omega_n$, and the high-frequency roll-off. The phase moves from approximately $0^\circ$ at low frequency toward $-180^\circ$ at high frequency. The resonance peak and its width are controlled primarily by the damping ratio and $Q$ factor.
 
 ### Driven sensor response
 
@@ -382,7 +558,7 @@ The calibrated output follows the displacement reference but has a small transie
 
 The solid and dashed curves are visually almost coincident for both mechanical states. The subplot titles report the maximum absolute and RMS differences measured during the local run.
 
-## 12. Reproducibility and CI
+## 13. Reproducibility and CI
 
 The canonical Python environment is defined in `environment.yml`. GitHub Actions creates that environment and runs the Python test suite on pushes and pull requests. The MATLAB/Simulink workflow is manual because it requires MATLAB and Simulink on the runner.
 
@@ -397,6 +573,6 @@ generate_results(params);
 
 The generated `.slx` models and `.png` figures are local artifacts produced by that workflow. Simulink build folders such as `slprj/` are ignored by Git.
 
-## 13. Limitations
+## 14. Limitations
 
 This project does not represent nonlinear stiffness, electrostatic actuation, electrical readout physics, packaging, temperature dependence, manufacturing variation, device geometry, or a qualified noise density. The MEMS label indicates the modelling context and signal-chain motivation; the implemented equations remain a normalized educational second-order system.

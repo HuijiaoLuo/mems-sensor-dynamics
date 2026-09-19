@@ -28,6 +28,11 @@ params.noise_seed = 7;
 params.lowpass_tau = 0.15;
 params.calibration_scale = 1;
 
+% Frequency-response sweep settings in rad/s.
+params.frequency.omega_min = 1e-2;
+params.frequency.omega_max = 10^1.5;
+params.frequency.sample_count = 1200;
+
 params.model_files.sensor_dynamics = fullfile( ...
     repo_root, 'models', 'sensor_dynamics.slx');
 params.model_files.signal_chain = fullfile( ...
@@ -35,4 +40,3 @@ params.model_files.signal_chain = fullfile( ...
 params.results_dir = fullfile(repo_root, 'results');
 
 end
-

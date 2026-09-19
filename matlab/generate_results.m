@@ -173,6 +173,9 @@ local_style_axes(ax);
 local_export(calibrated_figure, fullfile(params.results_dir, ...
     'calibrated_output.png'));
 
+% Analytical frequency response of the normalized mechanical dynamics.
+generate_frequency_response(params);
+
 if exist(params.model_files.sensor_dynamics, 'file') == 2
     % validate_model creates matlab_vs_simulink.png and reports local
     % numerical errors. Expected: curves should nearly overlap.

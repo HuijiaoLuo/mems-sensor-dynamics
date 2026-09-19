@@ -19,6 +19,7 @@ The main demonstration uses a unit step input, zero initial conditions, $k=1.2$,
 ## What is included
 
 - MATLAB reference dynamics and automatically generated Simulink models.
+- Laplace-domain and frequency-response analysis of the normalized resonator.
 - Six eigenvalue-based regimes: stable/unstable focus, center, stable/unstable node, and saddle.
 - A transparent signal chain with transduction, bias, deterministic illustrative noise, low-pass filtering, and calibration.
 - Python/SciPy equations and physics-aware `pytest` tests.
@@ -34,6 +35,7 @@ The figures in `results/` are generated locally by MATLAB:
 - [Sensor step response](results/sensor_step_response.png)
 - [Signal-chain stages](results/signal_chain.png)
 - [Calibrated output](results/calibrated_output.png)
+- [Frequency response](results/frequency_response.png)
 - [MATLAB versus Simulink](results/matlab_vs_simulink.png)
 
 ## Quick start
