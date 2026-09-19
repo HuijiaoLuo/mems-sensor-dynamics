@@ -171,7 +171,111 @@ Because $y=\dot{x}$, sinusoidal steady state gives
 Therefore velocity is relatively small at low frequency but can become larger
 than displacement near resonance or at higher frequency.
 
-### 4. Damping ratio and quality factor
+### 4. Manual frequency-sweep experiment
+
+Model: `sensor_frequency_sweep.slx`
+
+The single-frequency sine experiment can be extended into a time-domain
+frequency sweep. This model is not a black-box Bode-plot block: it treats the
+hand-built Gain--Sum--Integrator diagram as the plant, excites it with one
+sinusoid at a time, and measures the steady-state input and displacement.
+
+The same normalized mechanical equations are used:
+
+```math
+\dot{x}=y,
+```
+
+```math
+\dot{y}=u-kx-ry.
+```
+
+Equivalently,
+
+```math
+\ddot{x}+r\dot{x}+kx=u(t).
+```
+
+The sinusoidal input is
+
+```math
+u(t)=A_{\mathrm{in}}\sin(\omega t).
+```
+
+The model logs the input and displacement to the MATLAB workspace as
+`u_log` and `x_log`. This turns the experiment into a data path that can be
+processed by MATLAB:
+
+```text
+Simulink plant -> u_log, x_log -> MATLAB frequency-response analysis
+```
+
+For one frequency, `measure_frequency_point.m` performs the following steps:
+
+1. computes a simulation time from the system poles and excitation period;
+2. runs the Simulink model with the selected `omega` and `Ain`;
+3. discards the transient and keeps the final five complete periods;
+4. fits sinusoids to `u_log` and `x_log`;
+5. calculates the measured amplitude ratio and phase shift;
+6. compares the measurement with the analytical transfer function.
+
+For zero initial conditions, the transfer function from input to displacement
+is
+
+```math
+H(s)=\frac{X(s)}{U(s)}
+=\frac{1}{s^2+rs+k}.
+```
+
+Evaluating it on the imaginary axis gives
+
+```math
+H(j\omega)=\frac{1}{k-\omega^2+jr\omega}.
+```
+
+The measured magnitude is compared using
+
+```math
+20\log_{10}\left|\frac{X}{U}\right|,
+```
+
+and the measured phase is compared with $\arg H(j\omega)$. The script
+`run_frequency_sweep.m` repeats this process over
+
+```matlab
+omega_values = logspace(-1, 1, 20);
+```
+
+and plots analytical curves together with the Simulink measurement points.
+For `k = 1.2` and `r = 0.2`, the response shows:
+
+- low-frequency behavior close to the static gain $1/k$;
+- a resonance peak near
+
+  ```math
+  \omega_n=\sqrt{k}\approx1.095\ \mathrm{rad/s};
+  ```
+
+- a high-frequency roll-off approaching $-40\ \mathrm{dB/decade}$;
+- a phase transition from approximately $0^{\circ}$ to $-180^{\circ}$.
+
+The close overlap between the analytical curve and the measured Simulink
+points is a cross-validation result: the Bode-style response is reconstructed
+from time-domain simulations rather than drawn only from the analytical
+formula.
+
+The learning progression in this folder is therefore:
+
+```text
+manual oscillator
+    -> sinusoidal excitation
+    -> single-frequency resonance
+    -> automated frequency sweep
+    -> Bode-style characterization
+    -> analytical validation
+```
+
+### 5. Damping ratio and quality factor
 
 The normalized equation can be written in standard second-order form:
 
@@ -242,8 +346,9 @@ The progression is:
 2. observe time-domain and phase-space behavior;
 3. add external excitation;
 4. test sinusoidal response and resonance;
-5. connect resonance to damping ratio, bandwidth, and $Q$;
-6. reorganize the validated model into an automated, multi-tool workflow.
+5. automate the frequency sweep and compare measured and analytical response;
+6. connect resonance to damping ratio, bandwidth, and $Q$;
+7. reorganize the validated model into an automated, multi-tool workflow.
 
 For the current analytical derivation and generated frequency-response figure,
 see [the main methods document](../METHODS.md). The legacy models are learning
