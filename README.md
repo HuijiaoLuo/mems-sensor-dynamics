@@ -40,6 +40,32 @@ The main sensor demonstration uses k = 1.2, r = 0.2, zero initial conditions, an
 
 The original autonomous oscillator implementation is retained under legacy/ to document the evolution from an unforced dynamical system to the externally driven sensor model.
 
+## Simulation Setup and Initial Conditions
+
+The main sensor step-response and signal-chain demonstrations use:
+
+~~~text
+k = 1.2
+r = 0.2
+x0 = 0
+y0 = 0
+t0 = 0 s
+tfinal = 12 s
+u(t) = 0 before t = 1 s
+u(t) = 1 after t = 1 s
+~~~
+
+The dynamic-regime phase portraits use a separate diagnostic setup:
+
+~~~text
+u(t) = 0
+x0 = 1
+y0 = 0
+phase-portrait interval = 0 to 6 s
+~~~
+
+Using a nonzero initial displacement makes the stable, unstable, focus, node, and saddle geometries visible. This diagnostic setup is intentionally separate from the physically motivated sensor demonstration, which starts from rest at x0 = 0 and y0 = 0.
+
 ## Simulink Architecture
 
 matlab/build_models.m creates two models:
@@ -109,6 +135,15 @@ Run the local workflow to generate the following GitHub-ready figures:
 - ![Calibrated output](results/calibrated_output.png)
 
 The image files are not fabricated in this repository; they appear after the MATLAB scripts are run locally.
+
+### How to Read the Figures
+
+- phase_portraits.png shows x-y trajectories for the six unforced dynamic regimes. Stable focus spirals toward the origin, the center forms a closed orbit, unstable focus spirals outward, stable node approaches without sustained oscillation, unstable node diverges, and the saddle has both stable and unstable directions.
+- damping_regimes.png shows the eigenvalue locations and max Re(lambda). Negative real parts indicate decay, zero real parts indicate marginal behavior, and positive real parts indicate instability.
+- matlab_vs_simulink.png compares the MATLAB ode45 reference with the Simulink mechanical model using the same zero initial conditions and step input. The curves should nearly overlap.
+- sensor_step_response.png shows the main sensor displacement, the expected x_ss = u/k reference, the step excitation, and velocity. Because r = 0.2 is lightly damped, the 12-second window can still contain visible transient oscillation.
+- signal_chain.png shows displacement, ideal and raw transduced signals, and the smoothed low-pass output. The raw signal includes the configured bias and measurement noise.
+- calibrated_output.png compares the compensated output with normalized displacement. The low-pass filter creates transient lag, while the bias compensation removes the configured static bias estimate.
 
 ## How to Run
 
