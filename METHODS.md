@@ -109,13 +109,14 @@ with initial conditions
 x(0)=0,\qquad y(0)=0.
 ```
 
-The input is a unit step at $t_s=1\ \mathrm{s}$:
+The input is a unit step at $t_s=1\ \mathrm{s}$. It is defined explicitly as:
 
-```math
-u(t)=0\quad(t<t_s),
-\qquad
-u(t)=1\quad(t\geq t_s).
-```
+| Time condition | Input value |
+|---|---:|
+| $t<t_s$ | $u(t)=0$ |
+| $t\geq t_s$ | $u(t)=1$ |
+
+At the switching instant $t=t_s$, the model uses the post-step value $u(t_s)=1$.
 
 For a constant input $u_0$ at equilibrium, set both derivatives to zero:
 
