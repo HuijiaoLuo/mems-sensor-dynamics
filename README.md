@@ -18,25 +18,29 @@ This is a simplified educational model. It is not intended to reproduce the arch
 
 The mechanical model is
 
-~~~text
-x_dot = y
-y_dot = u - k*x - r*y
-~~~
+$$
+\dot{x}=y,\qquad \dot{y}=u(t)-kx-ry.
+$$
 
-or, equivalently,
+Equivalently,
 
-~~~text
-x'' + r*x' + k*x = u(t)
-~~~
+$$
+\ddot{x}+r\dot{x}+kx=u(t).
+$$
 
-The normalized parameters can be related to a mass-spring-damper analogy:
+The normalized parameters follow the mass-spring-damper analogy
 
-~~~text
-m*x'' + c*x' + k_s*x = F_ext
-r = c/m,  k = k_s/m,  u = F_ext/m
-~~~
+$$
+m\ddot{x}+c\dot{x}+k_sx=F_{\mathrm{ext}},\qquad
+r=\frac{c}{m},\quad k=\frac{k_s}{m},\quad
+u=\frac{F_{\mathrm{ext}}}{m}.
+$$
 
-The main sensor demonstration uses k = 1.2, r = 0.2, zero initial conditions, and a unit step input at t = 1 s. Its expected static displacement is x_ss = 1/k = 0.8333 in normalized units.
+The main sensor demonstration uses $k=1.2$, $r=0.2$, $x_0=0$, $y_0=0$, and a unit step input at $t=1\ \mathrm{s}$. Its expected static displacement is
+
+$$
+x_{\mathrm{ss}}=\frac{u}{k}=\frac{1}{1.2}\approx 0.8333.
+$$
 
 The original autonomous oscillator implementation is retained under legacy/ to document the evolution from an unforced dynamical system to the externally driven sensor model.
 
@@ -79,10 +83,10 @@ The generated models use the same parameter values and initial conditions as the
 
 The project preserves six second-order regimes and classifies them programmatically with
 
-~~~matlab
-A = [0 1; -k -r];
-lambda = eig(A);
-~~~
+$$
+A=\begin{bmatrix}0&1\\-k&-r\end{bmatrix},\qquad
+\lambda=\mathrm{eig}(A).
+$$
 
 | Regime | k | r |
 |---|---:|---:|
@@ -99,11 +103,14 @@ These experiments are intentionally separate from the physically sensible operat
 
 The signal-chain model follows transparent equations:
 
-~~~text
-v_ideal = G*x
-v_raw   = v_ideal + bias + noise
-y_cal   = scale*(v_filtered - bias_est)
-~~~
+$$
+\begin{aligned}
+v_{\mathrm{ideal}} &= Gx,\\
+v_{\mathrm{raw}} &= v_{\mathrm{ideal}}+\mathrm{bias}+\mathrm{noise},\\
+y_{\mathrm{cal}} &= \mathrm{scale}\,
+\left(v_{\mathrm{filtered}}-\mathrm{bias}_{\mathrm{est}}\right).
+\end{aligned}
+$$
 
 The model is intentionally small enough to inspect and modify in Simulink.
 
@@ -139,9 +146,9 @@ The image files are not fabricated in this repository; they appear after the MAT
 ### How to Read the Figures
 
 - phase_portraits.png shows x-y trajectories for the six unforced dynamic regimes. Stable focus spirals toward the origin, the center forms a closed orbit, unstable focus spirals outward, stable node approaches without sustained oscillation, unstable node diverges, and the saddle has both stable and unstable directions.
-- damping_regimes.png shows the eigenvalue locations and max Re(lambda). Negative real parts indicate decay, zero real parts indicate marginal behavior, and positive real parts indicate instability.
+- damping_regimes.png shows the eigenvalue locations and $\mathrm{max}\,\mathrm{Re}(\lambda)$. Negative real parts indicate decay, zero real parts indicate marginal behavior, and positive real parts indicate instability.
 - matlab_vs_simulink.png compares the MATLAB ode45 reference with the Simulink mechanical model using the same zero initial conditions and step input. The curves should nearly overlap.
-- sensor_step_response.png shows the main sensor displacement, the expected x_ss = u/k reference, the step excitation, and velocity. Because r = 0.2 is lightly damped, the 12-second window can still contain visible transient oscillation.
+- sensor_step_response.png shows the main sensor displacement, the expected $x_{\mathrm{ss}}=\frac{u}{k}$ reference, the step excitation, and velocity. Because $r=0.2$ is lightly damped, the 12-second window can still contain visible transient oscillation.
 - signal_chain.png shows displacement, ideal and raw transduced signals, and the smoothed low-pass output. The raw signal includes the configured bias and measurement noise.
 - calibrated_output.png compares the compensated output with normalized displacement. The low-pass filter creates transient lag, while the bias compensation removes the configured static bias estimate.
 

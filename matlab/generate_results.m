@@ -55,8 +55,8 @@ end
 xline(0, 'k:', 'HandleVisibility', 'off');
 yline(0, 'k:', 'HandleVisibility', 'off');
 grid on;
-xlabel('Real(lambda)');
-ylabel('Imag(lambda)');
+xlabel('$\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
+ylabel('$\mathrm{Im}(\lambda)$', 'Interpreter', 'latex');
 title('Eigenvalue locations');
 legend('Location', 'eastoutside');
 
@@ -73,7 +73,7 @@ xticks(1:numel(cases));
 xticklabels({cases.name});
 xtickangle(25);
 xlabel('Regime');
-ylabel('max Real(lambda)');
+ylabel('$\mathrm{max}\,\mathrm{Re}(\lambda)$', 'Interpreter', 'latex');
 title('Stability indicator from eigenvalues');
 local_export(damping_figure, fullfile(params.results_dir, ...
     'damping_regimes.png'));
@@ -85,7 +85,13 @@ tiledlayout(2, 1);
 nexttile;
 plot(t_sensor, state_sensor(:, 1), 'LineWidth', 1.3);
 hold on;
-yline(params.input.after / params.k, 'k--', 'x_ss = u/k');
+steady_state = params.input.after / params.k;
+yline(steady_state, 'k--');
+text(t_sensor(end), steady_state, ...
+    '$x_{\mathrm{ss}}=\frac{u}{k}$', ...
+    'Interpreter', 'latex', ...
+    'HorizontalAlignment', 'right', ...
+    'VerticalAlignment', 'bottom');
 xline(params.input.step_time, 'k:');
 grid on;
 xlabel('Time (s)');
