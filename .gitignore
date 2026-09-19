@@ -5,6 +5,9 @@ slprj/
 *.asv
 *.m~
 *.autosave
+__pycache__/
+.pytest_cache/
+test-results.xml
 
 # Local MATLAB data and compiled artifacts
 *.mat
@@ -18,4 +21,3 @@ results/*.fig
 # Operating-system files
 .DS_Store
 Thumbs.db
-
