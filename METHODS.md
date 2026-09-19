@@ -440,10 +440,17 @@ where $\alpha_x$ is the displacement scale in metres per normalized unit.
 For a symmetric proof mass between two fixed electrodes, let $d$ be the nominal gap, $A$ the electrode area, and $\varepsilon$ the permittivity. The exact parallel-plate capacitances are
 
 ```math
-C_1(\xi)=\frac{\varepsilon A}{d-\xi},
-\qquad
-C_2(\xi)=\frac{\varepsilon A}{d+\xi},
-\qquad |\xi|<d.
+C_1(\xi)=\frac{\varepsilon A}{d-\xi}.
+```
+
+```math
+C_2(\xi)=\frac{\varepsilon A}{d+\xi}.
+```
+
+The geometric validity condition is
+
+```math
+|\xi|\lt d.
 ```
 
 The differential and common-mode capacitances are therefore
@@ -458,7 +465,7 @@ C_{\Sigma}=C_1+C_2
 =\frac{2\varepsilon A d}{d^2-\xi^2}.
 ```
 
-The differential quantity is odd in displacement: changing the direction of motion changes the sign of $\Delta C$. The common-mode quantity is even: it changes with the magnitude of displacement but not its sign. The condition $|\xi|<d$ is a geometric validity condition because the proof mass must not close either electrode gap.
+The differential quantity is odd in displacement: changing the direction of motion changes the sign of $\Delta C$. The common-mode quantity is even: it changes with the magnitude of displacement but not its sign. The condition $|\xi|\lt d$ is a geometric validity condition because the proof mass must not close either electrode gap.
 
 ### Small-signal linearization
 
