@@ -20,6 +20,46 @@ The signal-chain study now includes a symmetric differential-capacitive transduc
 
 The next readout layer models an ideal C--V/charge-amplifier interface with offset, noise, finite bandwidth, saturation, ADC quantization, and digital calibration.
 
+## Architecture at a glance
+
+The repository follows one simplified sensor model from physics to software
+verification:
+
+```mermaid
+flowchart LR
+    U[Input u(t)] --> M[Mechanical plant<br/>mass-spring-damper]
+    M --> S[States<br/>displacement x, velocity y]
+
+    S --> X[Displacement x]
+    X --> XI[Physical displacement ξ]
+    XI --> C[Differential capacitance<br/>C1, C2, ΔC]
+    C --> R[Ideal readout front-end<br/>C-to-V, noise, bandwidth, rails]
+    R --> A[ADC and digital calibration]
+    A --> O[Calibrated sensor output]
+
+    M -. continuous reference .-> T[MATLAB / Simulink<br/>continuous model]
+    S --> Z[Exact-ZOH fixed-step<br/>dynamics core]
+    Z --> SM[Simulink fixed-step<br/>code-generation model]
+    SM --> G[Simulink Coder<br/>generated C++]
+    Z --> MR[MATLAB exact-ZOH<br/>reference]
+    Z --> Q[Portable C++<br/>implementation]
+    S -. same equations .-> P[Python / SciPy<br/>reference]
+    P --> V[Local runtime<br/>cross-validation]
+    G --> V
+    SM --> V
+    MR --> V
+    Q --> I[GitHub Actions CI]
+    P --> I
+```
+
+The upper branch is the complete system-level sensor chain. The lower branch
+is the fixed-step mechanical dynamics core used for code generation and
+runtime verification. The local path validates the actual C++ produced by
+Simulink Coder against the fixed-step Simulink model, MATLAB exact-ZOH
+reference, and Python/SciPy. GitHub Actions uses the tracked portable C++
+implementation because the Simulink-generated source requires a licensed
+MATLAB/Simulink toolchain.
+
 ## What is included
 
 - MATLAB reference dynamics and automatically generated Simulink models.
