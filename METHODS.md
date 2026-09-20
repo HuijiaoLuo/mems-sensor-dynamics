@@ -1321,12 +1321,45 @@ fixed-step model. Compiling a host executable is a separate compiler step.
 Simulink Coder must be installed and licensed; a standard Simulink installation
 alone cannot perform this export.
 The generated files are local build artifacts, so the repository keeps the
-model, the offline discretisation code, and the validation tests rather than
-the generated build directory.
+model, the offline discretisation code, the runtime harness, and the
+validation scripts rather than the generated build directory.
 
 Generated C++ is an implementation of the model algorithm for a host CPU,
 MCU, or DSP. It is not ASIC RTL. A future hardware-design stage would need a
 separate HDL/RTL workflow and fixed-point design decisions.
+
+### Runtime validation of generated C++
+
+The generated model is executed locally through `cpp/main.cpp`. The harness
+calls the generated model's initialization and step functions for the same
+fixed-step experiment used by the MATLAB and Python discrete references, then
+writes the trajectory to `cpp/cpp_runtime.csv`. The CSV contains the columns
+`time`, `x`, and `y`.
+
+The comparison scripts are:
+
+- `matlab/compare_cpp_runtime.m`: C++ versus the MATLAB exact-ZOH reference;
+- `matlab/validate_cpp_vs_simulink.m`: C++ versus the fixed-step Simulink
+  model, using temporary root-output logging through `SimulationInput`;
+- `python/compare_cpp_runtime.py`: C++ versus the independent SciPy/NumPy
+  discrete reference;
+- `matlab/validate_codegen_pipeline.m`: local orchestration of all three
+  comparisons through a named Conda environment.
+
+For the completed local run, $T_s=0.005\ \mathrm{s}$ and the interval
+$0\leq t\leq12\ \mathrm{s}$ produced 2401 samples. The maximum absolute errors
+were:
+
+| Comparison | $x$ | $y$ |
+|---|---:|---:|
+| C++ versus MATLAB discrete reference | $3.05\times10^{-15}$ | $3.39\times10^{-15}$ |
+| C++ versus fixed-step Simulink runtime | $3.28\times10^{-15}$ | $3.61\times10^{-15}$ |
+| C++ versus Python/SciPy reference | $3.05\times10^{-15}$ | $3.16\times10^{-15}$ |
+
+These values are consistent with round-off-level agreement for this host
+execution. The validation is currently a reproducible local workflow and is
+not claimed as part of GitHub Actions CI; the CI workflow remains license-free
+Python testing.
 
 ## 12. MATLAB--Simulink cross-validation
 

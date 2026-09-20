@@ -32,6 +32,8 @@ The next readout layer models an ideal C--V/charge-amplifier interface with offs
   [Python component guide](python/README.md).
 - A separate fixed-step discrete model for code-generation experiments and
   continuous-versus-discrete validation.
+- A local generated-C++ runtime harness cross-validated against MATLAB,
+  Simulink, and SciPy at the fixed-step sample grid.
 - Conda environment definition and GitHub Actions CI.
 - Optional manual MATLAB/Simulink CI for licensed runners.
 
@@ -88,6 +90,23 @@ Generated source and build folders are local artifacts and are not uploaded by
 the repository workflow. Compiling the generated source into a host executable
 is a separate compiler/toolchain step.
 
+After compiling the generated model and placing the local executable at
+`cpp/sensor_codegen_test.exe`, the runtime can be compared with all three
+reference implementations:
+
+```matlab
+addpath('matlab');
+params = init_params();
+report = validate_codegen_pipeline('conda', 'mems-sensor-dynamics', params);
+```
+
+The command runs the C++ executable, compares its CSV trajectory with the
+fixed-step Simulink model and MATLAB reference, and invokes
+`python/compare_cpp_runtime.py` through the named Conda environment. The local
+validation completed with maximum state errors of approximately $10^{-15}$ for
+$x$ and $y$ across 2401 samples. This generated-C++ runtime comparison is a
+manual local validation step; it is not currently part of GitHub Actions CI.
+
 The license-free Python tests use the canonical Conda environment:
 
 ```bash
@@ -98,7 +117,7 @@ python -m pytest tests/python -q
 
 ## Validation and CI
 
-`validate_model.m` compares the MATLAB `ode45` reference with the Simulink mechanical model and reports maximum absolute and RMS errors for $x(t)$ and $y(t)$. The comparison figure records those values after local execution.
+`validate_model.m` compares the MATLAB `ode45` reference with the Simulink mechanical model and reports maximum absolute and RMS errors for $x(t)$ and $y(t)$. The comparison figure records those values after local execution. The generated-C++ runtime is additionally compared with MATLAB, Simulink, and SciPy by the local `validate_codegen_pipeline` workflow described above.
 
 The Python workflow runs on pushes and pull requests. The MATLAB/Simulink workflow is manually triggered because it requires MATLAB and Simulink availability or a suitable MathWorks license.
 

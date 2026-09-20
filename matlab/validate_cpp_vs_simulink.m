@@ -41,6 +41,12 @@ end
 
 cpp = readtable(csv_file);
 
+required_columns = {'time', 'x', 'y'};
+if ~all(ismember(required_columns, cpp.Properties.VariableNames))
+    error('validate_cpp_vs_simulink:MissingColumns', ...
+        'C++ runtime CSV must contain time, x, and y columns.');
+end
+
 %% 2. Run fixed-step Simulink model
 model_file = params.model_files.codegen;
 

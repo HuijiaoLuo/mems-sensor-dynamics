@@ -20,6 +20,12 @@ end
 %% Load generated C++ runtime output
 cpp = readtable(csv_file);
 
+required_columns = {'time', 'x', 'y'};
+if ~all(ismember(required_columns, cpp.Properties.VariableNames))
+    error('compare_cpp_runtime:MissingColumns', ...
+        'C++ runtime CSV must contain time, x, and y columns.');
+end
+
 %% Generate MATLAB discrete reference
 [t_matlab, state_matlab] = simulate_discrete_model(params);
 
@@ -44,6 +50,13 @@ report.rms_error_x = sqrt(mean(error_x.^2));
 report.max_abs_error_y = max(abs(error_y));
 report.rms_error_y = sqrt(mean(error_y.^2));
 
+report.time_tolerance = 1e-12;
+report.state_tolerance = 1e-12;
+report.pass = ...
+    report.max_abs_error_time <= report.time_tolerance && ...
+    report.max_abs_error_x <= report.state_tolerance && ...
+    report.max_abs_error_y <= report.state_tolerance;
+
 %% Print report
 fprintf('\nGenerated C++ vs MATLAB discrete reference\n');
 fprintf('------------------------------------------\n');
@@ -53,5 +66,12 @@ fprintf('x max abs error  : %.17g\n', report.max_abs_error_x);
 fprintf('x RMS error      : %.17g\n', report.rms_error_x);
 fprintf('y max abs error  : %.17g\n', report.max_abs_error_y);
 fprintf('y RMS error      : %.17g\n', report.rms_error_y);
+if report.pass
+    fprintf('Validation       : PASS\n');
+else
+    fprintf('Validation       : FAIL\n');
+    error('compare_cpp_runtime:ToleranceExceeded', ...
+        'Generated C++ and MATLAB differ beyond tolerance.');
+end
 
 end
