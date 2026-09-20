@@ -34,6 +34,8 @@ The next readout layer models an ideal C--V/charge-amplifier interface with offs
   continuous-versus-discrete validation.
 - A local generated-C++ runtime harness cross-validated against MATLAB,
   Simulink, and SciPy at the fixed-step sample grid.
+- A portable C++ fixed-step runtime compiled and checked by GitHub Actions
+  against the Python/SciPy reference.
 - Conda environment definition and GitHub Actions CI.
 - Optional manual MATLAB/Simulink CI for licensed runners.
 
@@ -104,8 +106,11 @@ The command runs the C++ executable, compares its CSV trajectory with the
 fixed-step Simulink model and MATLAB reference, and invokes
 `python/compare_cpp_runtime.py` through the named Conda environment. The local
 validation completed with maximum state errors of approximately $10^{-15}$ for
-$x$ and $y$ across 2401 samples. This generated-C++ runtime comparison is a
-manual local validation step; it is not currently part of GitHub Actions CI.
+$x$ and $y$ across 2401 samples. The same fixed-step algorithm is also
+compiled as a portable C++ runtime in GitHub Actions and checked against the
+Python/SciPy reference with a $10^{-12}$ tolerance. GitHub Actions does not
+build the MATLAB-generated C++ artifacts because those require the local
+Simulink Coder toolchain.
 
 The license-free Python tests use the canonical Conda environment:
 
@@ -115,11 +120,26 @@ conda activate mems-sensor-dynamics
 python -m pytest tests/python -q
 ```
 
+To reproduce the portable C++ CI job locally on a machine with `g++`:
+
+```bash
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic \
+  cpp/ci_runtime.cpp -o cpp/.ci_runtime
+./cpp/.ci_runtime
+python python/compare_cpp_runtime.py
+```
+
+This compiles the standalone exact-ZOH runtime used by CI. It is deliberately
+separate from the Simulink-generated source, so this check does not require a
+MATLAB license or Simulink Coder.
+
 ## Validation and CI
 
 `validate_model.m` compares the MATLAB `ode45` reference with the Simulink mechanical model and reports maximum absolute and RMS errors for $x(t)$ and $y(t)$. The comparison figure records those values after local execution. The generated-C++ runtime is additionally compared with MATLAB, Simulink, and SciPy by the local `validate_codegen_pipeline` workflow described above.
 
-The Python workflow runs on pushes and pull requests. The MATLAB/Simulink workflow is manually triggered because it requires MATLAB and Simulink availability or a suitable MathWorks license.
+The Python and portable C++ jobs run on pushes and pull requests. The
+MATLAB/Simulink workflow is manually triggered because it requires MATLAB and
+Simulink availability or a suitable MathWorks license.
 
 ## Repository structure
 
@@ -130,6 +150,7 @@ mems-sensor-dynamics/
 ├── run_demo.m
 ├── models/                 # Simulink models and model notes
 ├── matlab/                 # MATLAB reference, discrete model, and validation
+├── cpp/                    # portable C++ runtime and local codegen harness
 ├── python/                 # SciPy dynamics, capacitance, and readout models
 ├── tests/                  # Python and MATLAB tests
 ├── results/                # Locally generated figures

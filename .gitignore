@@ -19,6 +19,8 @@ test-results.xml
 # Local generated-C++ runtime artifacts
 cpp/*.exe
 cpp/cpp_runtime.csv
+cpp/.ci_runtime
+cpp/.ci_runtime.exe
 
 # Keep generated PNG figures in results/ under version control.
 # Ignore only optional interactive figure files.

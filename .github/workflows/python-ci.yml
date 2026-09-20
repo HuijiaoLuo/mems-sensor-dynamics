@@ -1,4 +1,4 @@
-name: Conda Python physics CI
+name: Python and C++ verification CI
 
 on:
   push:
@@ -36,3 +36,40 @@ jobs:
         with:
           name: python-test-report
           path: test-results.xml
+
+  cpp-runtime:
+    name: C++ runtime cross-validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          activate-environment: mems-sensor-dynamics
+          environment-file: environment.yml
+          auto-activate: true
+          channel-priority: strict
+
+      - name: Compile portable C++ runtime
+        run: >-
+          g++ -std=c++17 -O2 -Wall -Wextra -pedantic
+          cpp/ci_runtime.cpp -o cpp/.ci_runtime
+
+      - name: Run portable C++ runtime
+        run: ./cpp/.ci_runtime
+
+      - name: Compare C++ trajectory with Python/SciPy reference
+        run: python python/compare_cpp_runtime.py
+
+      - name: Upload C++ runtime trajectory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-runtime-trajectory
+          path: cpp/cpp_runtime.csv

@@ -243,11 +243,11 @@ python -m py_compile \
     tests/python/test_sensor_model.py
 ```
 
-## Compare the generated C++ runtime
+## Compare the C++ runtime
 
-The generated C++ executable writes `cpp/cpp_runtime.csv` when it is run
-locally. The CSV can then be compared with the independent fixed-step
-Python/SciPy reference:
+The portable or locally generated C++ executable writes
+`cpp/cpp_runtime.csv` when it is run. The CSV can then be compared with the
+independent fixed-step Python/SciPy reference:
 
 ```bash
 python python/compare_cpp_runtime.py
@@ -255,9 +255,10 @@ python python/compare_cpp_runtime.py
 
 The script checks the sample grid and compares the `x` and `y` trajectories
 with a $10^{-12}$ tolerance. It returns a non-zero exit status if the CSV is
-missing, malformed, or outside tolerance. This runtime comparison is a local
-cross-validation step; the GitHub Actions workflow runs the license-free
-Python tests but does not build or execute generated C++.
+missing, malformed, or outside tolerance. GitHub Actions compiles the
+portable `cpp/ci_runtime.cpp` implementation and uses this script as its
+cross-language regression check. It does not build the separate
+Simulink-generated C++ artifacts.
 
 ## Continuous integration
 

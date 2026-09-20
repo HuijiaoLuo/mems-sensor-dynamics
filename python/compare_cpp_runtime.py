@@ -71,8 +71,8 @@ passed = (
     and max_y_error <= state_tolerance
 )
 
-print("Generated C++ vs Python discrete reference")
-print("------------------------------------------")
+print("C++ fixed-step runtime vs Python discrete reference")
+print("---------------------------------------------------")
 print(f"Samples          : {len(time_py)}")
 print(f"Max time error   : {max_time_error:.17g}")
 print(f"x max abs error  : {max_x_error:.17g}")

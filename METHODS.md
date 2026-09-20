@@ -1357,9 +1357,16 @@ were:
 | C++ versus Python/SciPy reference | $3.05\times10^{-15}$ | $3.16\times10^{-15}$ |
 
 These values are consistent with round-off-level agreement for this host
-execution. The validation is currently a reproducible local workflow and is
-not claimed as part of GitHub Actions CI; the CI workflow remains license-free
-Python testing.
+execution. The MATLAB/Simulink-generated C++ comparison remains a local
+workflow, because the generated artifacts require Simulink Coder. A portable
+implementation of the same exact-ZOH update is compiled from
+`cpp/ci_runtime.cpp` in GitHub Actions and compared with the Python/SciPy
+reference on every push and pull request.
+
+This CI executable is intentionally a small portable implementation of the
+same fixed-step algorithm, not a checked-in copy of the Simulink-generated
+source. The latter remains a local code-generation and cross-validation
+artifact because it depends on the installed Simulink Coder toolchain.
 
 ## 12. MATLAB--Simulink cross-validation
 
