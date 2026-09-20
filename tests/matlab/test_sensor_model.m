@@ -137,6 +137,30 @@ verifyLessThanOrEqual(testCase, max(frontend.adc_code), ...
     2^params.readout.adc_bits - 1);
 end
 
+function testDiscreteMatricesPreserveStaticGain(testCase)
+matrices = discretize_sensor_model(1.2, 0.2, 0.005);
+equilibrium = (eye(2) - matrices.Ad) \ matrices.Bd;
+
+verifyEqual(testCase, equilibrium, [1 / 1.2; 0], 'AbsTol', 1e-12);
+end
+
+function testDiscreteResponseMatchesContinuousReference(testCase)
+params = init_params();
+[t_discrete, state_discrete] = simulate_discrete_model(params);
+[t_reference, state_reference] = reference_model(params);
+
+x_reference = interp1(t_reference, state_reference(:, 1), ...
+    t_discrete, 'linear');
+y_reference = interp1(t_reference, state_reference(:, 2), ...
+    t_discrete, 'linear');
+
+% reference_model returns ode45's adaptive output grid. The interpolation
+% onto the fixed grid contributes a small comparison error, so this is a
+% consistency check rather than a bit-for-bit solver comparison.
+verifyLessThan(testCase, max(abs(x_reference - state_discrete(:, 1))), 1e-2);
+verifyLessThan(testCase, max(abs(y_reference - state_discrete(:, 2))), 1e-2);
+end
+
 function testSimulinkMatchesReferenceWhenAvailable(testCase)
 % This test is skipped on MATLAB installations without Simulink.
 assumeTrue(testCase, license('test', 'Simulink'));

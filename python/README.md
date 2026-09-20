@@ -27,6 +27,17 @@ The mechanical state variables are normalized:
 The capacitive and readout modules then use physical units such as metres,
 farads, volts, and ADC codes.
 
+The separate `discrete_sensor_model.py` module provides the fixed-step
+reference used by the code-generation stage. It computes exact
+zero-order-hold matrices once and applies the sample-by-sample update
+
+```math
+\mathbf{z}[n+1]=A_d\mathbf{z}[n]+B_d u[n].
+```
+
+This mirrors `models/sensor_codegen_discrete.slx`; it does not replace the
+high-accuracy continuous `solve_ivp` reference in `sensor_model.py`.
+
 ## Module overview
 
 ### `sensor_model.py`
@@ -157,6 +168,19 @@ This makes analogue clipping and finite bandwidth visible before the digital
 calibration stage. The calibration cannot recover information lost by rail
 saturation.
 
+### `discrete_sensor_model.py`
+
+This module supports the fixed-step/code-generation comparison:
+
+- `discrete_matrices(...)` computes the zero-order-hold matrices $A_d$ and
+  $B_d$ offline;
+- `discrete_state_update(...)` applies one deterministic sample update;
+- `simulate_discrete(...)` runs the fixed-step model on an input held over
+  each sample interval.
+
+The default sample time used by the repository is $T_s=0.005$ s. The module
+is useful for checking the algorithm before compiling generated C++.
+
 ### `__init__.py` and `requirements.txt`
 
 `__init__.py` marks `python/` as the lightweight Python reference package; it
@@ -168,7 +192,7 @@ that is specified by the repository-level `environment.yml`.
 
 All Python tests are in
 [`tests/python/test_sensor_model.py`](../tests/python/test_sensor_model.py).
-The single test module covers all three implementation modules.
+The single test module covers all four implementation modules.
 
 The tests verify physical and numerical properties rather than only one
 reference output:
@@ -182,6 +206,7 @@ reference output:
 | Frequency response | static gain, resonance, damping metrics, high-frequency roll-off |
 | Capacitance | zero differential output, odd symmetry, sensitivity, gap validity |
 | Readout front-end | calibration, amplifier rails, ADC code limits, invalid configuration handling |
+| Discrete code-generation reference | zero-order-hold matrices, matrix update, continuous/discrete agreement, sample-grid validation |
 
 ## Create the environment and run tests
 

@@ -23,6 +23,11 @@ from capacitive_transduction import (  # noqa: E402
     capacitive_transduction,
 )
 from readout_frontend import readout_frontend  # noqa: E402
+from discrete_sensor_model import (  # noqa: E402
+    discrete_matrices,
+    discrete_state_update,
+    simulate_discrete,
+)
 
 
 def test_input_driven_state_equation() -> None:
@@ -300,4 +305,61 @@ def test_readout_frontend_rejects_invalid_adc_configuration() -> None:
             adc_max=1.0,
             capacitive_sensitivity=1.0,
             displacement_scale=1.0,
+        )
+
+
+def test_discrete_matrices_preserve_the_continuous_static_gain() -> None:
+    matrices = discrete_matrices(k=1.2, r=0.2, sample_time=0.005)
+
+    # For a constant input, the discrete equilibrium must satisfy
+    # (I - Ad) z_ss = Bd*u, giving x_ss = u/k and y_ss = 0.
+    equilibrium = np.linalg.solve(
+        np.eye(2) - matrices.state,
+        matrices.input[:, 0],
+    )
+    np.testing.assert_allclose(equilibrium, [1.0 / 1.2, 0.0], atol=1e-12)
+
+
+def test_discrete_state_update_matches_matrix_definition() -> None:
+    matrices = discrete_matrices(k=1.2, r=0.2, sample_time=0.005)
+    state = np.array([0.4, -0.2])
+
+    updated = discrete_state_update(state, 1.0, matrices)
+    expected = matrices.state @ state + matrices.input[:, 0]
+
+    np.testing.assert_allclose(updated, expected, rtol=0.0, atol=1e-14)
+
+
+def test_fixed_step_response_matches_continuous_reference() -> None:
+    sample_time = 0.005
+    time_discrete, state_discrete, _, _ = simulate_discrete(
+        k=1.2,
+        r=0.2,
+        u_fun=lambda time: step_input(time),
+        sample_time=sample_time,
+        t_span=(0.0, 12.0),
+    )
+    time_continuous, state_continuous = simulate(
+        k=1.2,
+        r=0.2,
+        u_fun=lambda time: step_input(time),
+        t_span=(0.0, 12.0),
+        sample_count=time_discrete.size,
+    )
+
+    np.testing.assert_allclose(time_discrete, time_continuous, atol=1e-12)
+    # solve_ivp integrates across a discontinuous step input, whereas the
+    # discrete model applies the exact zero-order-hold update on each sample.
+    # The tolerance covers that reference-solver event handling difference.
+    np.testing.assert_allclose(state_discrete, state_continuous, atol=2e-5)
+
+
+def test_fixed_step_simulator_rejects_non_integer_sample_count() -> None:
+    with pytest.raises(ValueError, match="integer multiple"):
+        simulate_discrete(
+            k=1.2,
+            r=0.2,
+            u_fun=lambda _time: 0.0,
+            sample_time=0.3,
+            t_span=(0.0, 1.0),
         )

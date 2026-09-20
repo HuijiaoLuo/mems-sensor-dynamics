@@ -9,5 +9,6 @@ addpath(fullfile(repo_root, 'matlab'));
 params = init_params();
 build_models(params);
 generate_results(params);
+generate_discrete_results(params);
 
 disp('Demo complete. Inspect the models/ and results/ folders.');

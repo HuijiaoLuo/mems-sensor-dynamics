@@ -30,6 +30,8 @@ The next readout layer models an ideal C--V/charge-amplifier interface with offs
 - An ideal capacitive readout front-end with ADC and digital calibration.
 - Python/SciPy equations and physics-aware `pytest` tests; see the detailed
   [Python component guide](python/README.md).
+- A separate fixed-step discrete model for code-generation experiments and
+  continuous-versus-discrete validation.
 - Conda environment definition and GitHub Actions CI.
 - Optional manual MATLAB/Simulink CI for licensed runners.
 
@@ -46,6 +48,7 @@ The figures in `results/` are generated locally by MATLAB:
 - [Exact versus linearized capacitive transduction](results/capacitive_transduction.png)
 - [Capacitive readout front-end](results/readout_frontend.png)
 - [MATLAB versus Simulink](results/matlab_vs_simulink.png)
+- [Continuous versus discrete model](results/discrete_vs_continuous.png)
 
 ## Quick start
 
@@ -62,9 +65,26 @@ addpath('matlab');
 params = init_params();
 build_models(params);
 generate_results(params);
+generate_discrete_results(params);
 ```
 
-This creates the additional `models/sensor_capacitive_chain.slx` and `models/sensor_readout_frontend.slx` models when they are not already present. Existing Simulink files are kept unchanged.
+This creates the additional capacitive, readout, and fixed-step code-generation
+models when they are not already present. Existing Simulink files are kept
+unchanged. The fixed-step comparison is written to
+`results/discrete_vs_continuous.png`.
+
+The optional C++ source generation requires Simulink Coder and is run locally
+with:
+
+```matlab
+addpath('matlab');
+params = init_params();
+generate_cpp_code(params);
+```
+
+Generated source and build folders are local artifacts and are not uploaded by
+the repository workflow. Compiling the generated source into a host executable
+is a separate compiler/toolchain step.
 
 The license-free Python tests use the canonical Conda environment:
 
@@ -88,7 +108,7 @@ mems-sensor-dynamics/
 ├── METHODS.md
 ├── run_demo.m
 ├── models/                 # Simulink models and model notes
-├── matlab/                 # MATLAB reference, readout, and validation code
+├── matlab/                 # MATLAB reference, discrete model, and validation
 ├── python/                 # SciPy dynamics, capacitance, and readout models
 ├── tests/                  # Python and MATLAB tests
 ├── results/                # Locally generated figures
@@ -96,6 +116,10 @@ mems-sensor-dynamics/
 ├── environment.yml
 └── .github/workflows/      # Python CI and optional MATLAB CI
 ```
+
+The continuous `sensor_dynamics.slx` model remains the high-accuracy
+variable-step reference. `sensor_codegen_discrete.slx` is a separate
+fixed-step model whose discrete state update is suitable for Simulink Coder.
 
 ## Scope
 

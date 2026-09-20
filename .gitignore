@@ -1,6 +1,8 @@
 # MATLAB / Simulink generated files
 slprj/
 *_files/
+*_grt_rtw/
+*_ert_rtw/
 *.slxc
 *.asv
 *.m~

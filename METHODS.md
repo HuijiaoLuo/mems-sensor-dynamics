@@ -380,6 +380,10 @@ The MATLAB implementation is split by responsibility:
 - `matlab/get_test_cases.m` builds the eigenvalue-classification examples.
 - `matlab/generate_results.m` creates the figures.
 - `matlab/validate_model.m` compares MATLAB with Simulink.
+- `matlab/discretize_sensor_model.m` computes fixed-step matrices for the
+  code-generation model.
+- `matlab/simulate_discrete_model.m` runs the same fixed-step algorithm in
+  MATLAB.
 
 The step input is discontinuous at $t_s=1\ \mathrm{s}$. To avoid allowing an adaptive solver step to cross that discontinuity, `reference_model.m` integrates in two intervals:
 
@@ -391,7 +395,9 @@ The final state of the first interval is used as the initial state of the second
 
 ## 8. Simulink implementation
 
-`matlab/build_models.m` creates two models when run locally with Simulink:
+`matlab/build_models.m` creates the project models when run locally with
+Simulink. The continuous models use the variable-step `ode45` solver; the
+separate code-generation model uses a fixed-step discrete solver.
 
 ### Mechanical model
 
@@ -414,6 +420,67 @@ The model uses the variable-step `ode45` solver with relative tolerance $10^{-6}
 The `sensor_signal_chain.slx` model extends the mechanical output with transduction, bias, noise, low-pass filtering, and calibration. The intermediate signals are logged so that each stage can be inspected independently.
 
 The new `sensor_capacitive_chain.slx` variant replaces the abstract transduction gain with explicit blocks for physical displacement, the two electrode gaps, reciprocal operations, electrode capacitances, differential capacitance, and a normalized readout gain. `build_models(params)` creates this additional model when it is absent and leaves existing model files untouched.
+
+### Fixed-step code-generation model
+
+The `sensor_codegen_discrete.slx` model is intentionally separate from the
+continuous `sensor_dynamics.slx` reference. Its purpose is to define an
+algorithm that can run once per sampling period on a CPU, MCU, or DSP and can
+therefore be passed to Simulink Coder.
+
+Let the continuous state vector be
+
+```math
+\mathbf{z}(t)=\begin{bmatrix}x(t)\\y(t)\end{bmatrix},
+\qquad
+\dot{\mathbf{z}}(t)=A\mathbf{z}(t)+B u(t).
+```
+
+For a sample time $T_s$, assume that the input is held constant over each
+interval $[nT_s,(n+1)T_s)$. The exact zero-order-hold discretisation is
+
+```math
+\mathbf{z}[n+1]=A_d\mathbf{z}[n]+B_d u[n],
+```
+
+where
+
+```math
+A_d=e^{A T_s},
+\qquad
+B_d=\int_0^{T_s}e^{A\tau}B\,d\tau.
+```
+
+The repository computes these matrices offline with the augmented matrix
+
+```math
+\exp\left(
+\begin{bmatrix}A&B\\0&0\end{bmatrix}T_s
+\right)
+=
+\begin{bmatrix}A_d&B_d\\0&1\end{bmatrix}.
+```
+
+The default value is $T_s=0.005\ \mathrm{s}$. The choice is a modelling
+decision: a smaller $T_s$ gives more computation per second but represents the
+continuous response more closely when a simpler numerical discretisation is
+used. Here the exact zero-order-hold matrices make the mechanical state update
+particularly accurate for the piecewise-constant step input.
+
+The blocks are:
+
+```text
+Step input
+    -> Discrete State-Space [Ad, Bd, C = I, D = 0]
+    -> x[n], y[n] Outports
+```
+
+Unlike the continuous reference, this model has no variable-step solver and no
+continuous Integrator or Transfer Fcn states. That makes the timing explicit
+and makes the model appropriate for code-generation experiments. The ordinary
+Outports are also preferable to `To Workspace` blocks in the algorithm model,
+because logging is a simulation concern while the state update is the
+deployable computation.
 
 ## 9. Signal-chain equations
 
@@ -649,6 +716,11 @@ where $\hat{b}$ is the estimated bias and $S$ is the calibration scale.
 bandwidth, saturation, ADC quantization, and digital displacement calibration
 without requiring a MATLAB license.
 
+`python/discrete_sensor_model.py` mirrors the fixed-step Simulink model. It
+computes $A_d$ and $B_d$ once with SciPy and then applies the matrix update for
+each sample. The per-sample operation contains no numerical integration or
+matrix-exponential calculation; those are offline preparation steps.
+
 The tests in `tests/python/test_sensor_model.py` check properties rather than only example numbers:
 
 - the input-driven state equation;
@@ -659,8 +731,43 @@ The tests in `tests/python/test_sensor_model.py` check properties rather than on
 - eigenvalue-based regime classification;
 - zero-output, symmetry, small-signal, and gap-validity properties of the capacitive transducer;
 - rail, ADC-range, and small-signal calibration properties of the readout front-end.
+- zero-order-hold equilibrium, deterministic state updates, and agreement
+  between the fixed-step and continuous reference models.
 
-## 11. MATLAB--Simulink cross-validation
+## 11. Discrete-time validation and C++ generation
+
+`generate_discrete_results.m` samples the high-accuracy `ode45` trajectory on
+the fixed-step grid and compares it with `simulate_discrete_model.m`. It
+reports maximum absolute and RMS errors for both $x$ and $y$ and creates
+`results/discrete_vs_continuous.png`.
+
+The expected workflow is:
+
+```matlab
+addpath('matlab');
+params = init_params();
+build_models(params);
+report = generate_discrete_results(params);
+```
+
+The same discrete algorithm can then be exported as C++ source with Simulink
+Coder:
+
+```matlab
+generate_cpp_code(params);
+```
+
+This selects C++ as the target language and generates source only for the
+fixed-step model. Compiling a host executable is a separate compiler step.
+The generated files are local build artifacts, so the repository keeps the
+model, the offline discretisation code, and the validation tests rather than
+the generated build directory.
+
+Generated C++ is an implementation of the model algorithm for a host CPU,
+MCU, or DSP. It is not ASIC RTL. A future hardware-design stage would need a
+separate HDL/RTL workflow and fixed-point design decisions.
+
+## 12. MATLAB--Simulink cross-validation
 
 `validate_model.m` obtains the MATLAB reference trajectory and the logged Simulink trajectories. Because the two variable-step solvers generally return different time grids, both trajectories are linearly interpolated onto a common vector
 
@@ -691,7 +798,7 @@ with the same definitions for $y$. These metrics quantify agreement between two 
 
 Small nonzero values are expected because the solvers use adaptive internal time steps and the comparison applies interpolation. The generated comparison figure records the actual values from the local MATLAB/Simulink run rather than embedding assumed results in the repository.
 
-## 12. Reading the generated results
+## 13. Reading the generated results
 
 The following figures are generated by `matlab/generate_results.m` after running the local MATLAB/Simulink workflow.
 
@@ -754,7 +861,7 @@ requirements, not a transistor-level circuit simulation.
 
 The solid and dashed curves are visually almost coincident for both mechanical states. The subplot titles report the maximum absolute and RMS differences measured during the local run.
 
-## 13. Reproducibility and CI
+## 14. Reproducibility and CI
 
 The canonical Python environment is defined in `environment.yml`. GitHub Actions creates that environment and runs the Python test suite on pushes and pull requests. The MATLAB/Simulink workflow is manual because it requires MATLAB and Simulink on the runner.
 
@@ -769,6 +876,6 @@ generate_results(params);
 
 The generated `.slx` models and `.png` figures are local artifacts produced by that workflow. Simulink build folders such as `slprj/` are ignored by Git.
 
-## 14. Limitations
+## 15. Limitations
 
 The capacitive branch is still an educational lumped model: it does not represent fringing fields, electrostatic force feedback, pull-in dynamics, parasitic capacitance, a charge amplifier, switched-capacitor readout, packaging, temperature dependence, manufacturing variation, or a qualified noise density. The MEMS label indicates the modelling context and signal-chain motivation; the implemented mechanical equations remain a normalized educational second-order system.

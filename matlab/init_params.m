@@ -69,6 +69,11 @@ params.model_files.capacitive_chain = fullfile( ...
     repo_root, 'models', 'sensor_capacitive_chain.slx');
 params.model_files.readout_frontend = fullfile( ...
     repo_root, 'models', 'sensor_readout_frontend.slx');
+% Fixed-step model used for discrete-time validation and optional C/C++ code
+% generation. The sample time is deliberately explicit and deterministic.
+params.codegen.sample_time = 0.005;
+params.model_files.codegen = fullfile( ...
+    repo_root, 'models', 'sensor_codegen_discrete.slx');
 params.results_dir = fullfile(repo_root, 'results');
 
 end
