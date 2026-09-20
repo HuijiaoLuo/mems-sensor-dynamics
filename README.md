@@ -73,8 +73,10 @@ models when they are not already present. Existing Simulink files are kept
 unchanged. The fixed-step comparison is written to
 `results/discrete_vs_continuous.png`.
 
-The optional C++ source generation requires Simulink Coder and is run locally
-with:
+The optional C++ source generation requires the **Simulink Coder app/product**
+to be installed and licensed; Simulink alone is not sufficient. In MATLAB,
+open the **Apps** tab and launch **Simulink Coder**, or run the reproducible
+script below:
 
 ```matlab
 addpath('matlab');

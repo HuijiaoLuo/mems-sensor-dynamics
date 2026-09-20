@@ -61,9 +61,10 @@ params = init_params();
 generate_cpp_code(params);
 ```
 
-This requires Simulink Coder. The generated `*_grt_rtw/` directory and other
-build artifacts are ignored by Git. The function generates source only; a
-host executable can be compiled later with an available C++ toolchain. The
+This requires the Simulink Coder app/product to be installed and licensed;
+Simulink alone is not sufficient. The generated `*_grt_rtw/` directory and
+other build artifacts are ignored by Git. The function generates source only;
+a host executable can be compiled later with an available C++ toolchain. The
 repository keeps the MATLAB and Python reference implementations rather than
 generated source files.
 

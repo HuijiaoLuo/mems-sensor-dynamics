@@ -750,8 +750,8 @@ build_models(params);
 report = generate_discrete_results(params);
 ```
 
-The same discrete algorithm can then be exported as C++ source with Simulink
-Coder:
+The same discrete algorithm can then be exported as C++ source with the
+Simulink Coder app/product:
 
 ```matlab
 generate_cpp_code(params);
@@ -759,6 +759,8 @@ generate_cpp_code(params);
 
 This selects C++ as the target language and generates source only for the
 fixed-step model. Compiling a host executable is a separate compiler step.
+Simulink Coder must be installed and licensed; a standard Simulink installation
+alone cannot perform this export.
 The generated files are local build artifacts, so the repository keeps the
 model, the offline discretisation code, and the validation tests rather than
 the generated build directory.
