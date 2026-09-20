@@ -33,7 +33,7 @@ flowchart LR
     S --> X["Displacement x"]
     X --> XI["Physical displacement ξ"]
     XI --> C["Differential capacitance<br/>C1, C2, ΔC"]
-    C --> R["Ideal readout front-end<br/>C-to-V, noise, bandwidth, rails"]
+    C --> R["Behavioral readout front-end<br/>C-to-V, noise, bandwidth, rails"]
     R --> A["ADC and digital calibration"]
     A --> O["Calibrated sensor output"]
 
@@ -41,13 +41,14 @@ flowchart LR
     S --> Z["Exact-ZOH fixed-step<br/>dynamics core"]
     Z --> SM["Simulink fixed-step<br/>code-generation model"]
     SM --> G["Simulink Coder<br/>generated C++"]
+    G --> E["Native compile + execute<br/>g++ runtime"]
     Z --> MR["MATLAB exact-ZOH<br/>reference"]
-    Z --> Q["Portable C++<br/>implementation"]
-    S -.-> P["Python / SciPy<br/>reference"]
-    P --> V["Local runtime<br/>cross-validation"]
-    G --> V
+    S -.-> P["Python / SciPy<br/>references"]
+    E --> V["Local full-trajectory<br/>cross-validation"]
     SM --> V
     MR --> V
+    P --> V
+    Z --> Q["Portable C++<br/>implementation"]
     Q --> I["GitHub Actions CI"]
     P --> I
 ```
