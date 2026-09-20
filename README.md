@@ -28,7 +28,8 @@ The next readout layer models an ideal C--V/charge-amplifier interface with offs
 - A transparent signal chain with transduction, bias, deterministic illustrative noise, low-pass filtering, and calibration.
 - A simplified differential-capacitive transducer with exact and linearized readout paths.
 - An ideal capacitive readout front-end with ADC and digital calibration.
-- Python/SciPy equations and physics-aware `pytest` tests.
+- Python/SciPy equations and physics-aware `pytest` tests; see the detailed
+  [Python component guide](python/README.md).
 - Conda environment definition and GitHub Actions CI.
 - Optional manual MATLAB/Simulink CI for licensed runners.
 
