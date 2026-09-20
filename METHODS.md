@@ -482,6 +482,565 @@ Outports are also preferable to `To Workspace` blocks in the algorithm model,
 because logging is a simulation concern while the state update is the
 deployable computation.
 
+### Zero-order-hold discretisation: derivation and meaning
+
+The key assumption behind this discrete model is **zero-order hold (ZOH)**:
+the input is sampled at $t_k=kT_s$ and then held constant until the next
+sample,
+
+```math
+u(t)=u_k,
+\qquad t_k\leq t<t_{k+1}.
+```
+
+This is a useful model of a digital controller or sensor interface: the
+software updates the input once per sample, while the plant sees a constant
+value during the interval. ZOH is therefore an assumption about the input
+between samples, not an approximation that replaces the mechanical physics by
+an arbitrary numerical formula.
+
+Start with the continuous state-space equation
+
+```math
+\dot{\mathbf{z}}(t)=A\mathbf{z}(t)+B u(t),
+\qquad
+\mathbf{z}(t_k)=\mathbf{z}_k.
+```
+
+For a fixed interval, $u(t)=u_k$ is constant. The solution can be obtained by
+using the state-transition matrix $e^{A(t-t_k)}$:
+
+```math
+\mathbf{z}(t_k+\tau)
+=e^{A\tau}\mathbf{z}_k
++\int_0^\tau e^{A(\tau-\sigma)}B u_k\,d\sigma,
+\qquad 0\leq\tau\leq T_s.
+```
+
+At the end of the interval, set $\tau=T_s$ and use the fact that $u_k$ is a
+constant scalar. This gives
+
+```math
+\mathbf{z}_{k+1}
+=e^{AT_s}\mathbf{z}_k
++\left(\int_0^{T_s}e^{A(T_s-\sigma)}B\,d\sigma\right)u_k.
+```
+
+Changing the integration variable to $\rho=T_s-\sigma$ gives the standard
+discrete-time form
+
+```math
+\boxed{
+\mathbf{z}_{k+1}=A_d\mathbf{z}_k+B_d u_k
+}
+```
+
+with
+
+```math
+\boxed{A_d=e^{AT_s}},
+\qquad
+\boxed{B_d=\int_0^{T_s}e^{A\rho}B\,d\rho}.
+```
+
+#### Where the $B_d$ integral comes from
+
+The input integral is not added as an arbitrary correction. It appears
+naturally when the continuous differential equation is solved over one ZOH
+interval. Start with
+
+```math
+\dot{\mathbf{z}}(t)=A\mathbf{z}(t)+B u_k,
+\qquad
+t_k\leq t<t_{k+1},
+```
+
+where $u_k$ is constant and the initial condition is
+$\mathbf{z}(t_k)=\mathbf{z}_k$. Multiply the equation on the left by
+$e^{-At}$:
+
+```math
+e^{-At}\dot{\mathbf{z}}(t)
+=e^{-At}A\mathbf{z}(t)+e^{-At}B u_k.
+```
+
+The useful term is the derivative of the product $e^{-At}\mathbf{z}(t)$:
+
+```math
+\frac{d}{dt}\left(e^{-At}\mathbf{z}(t)\right)
+=\frac{d e^{-At}}{dt}\mathbf{z}(t)+e^{-At}\dot{\mathbf{z}}(t).
+```
+
+Since
+
+```math
+\frac{d e^{-At}}{dt}=-Ae^{-At},
+```
+
+substitution of the original differential equation gives
+
+```math
+\frac{d}{dt}\left(e^{-At}\mathbf{z}(t)\right)
+=-Ae^{-At}\mathbf{z}(t)
++e^{-At}\left(A\mathbf{z}(t)+B u_k\right).
+```
+
+The state-transition matrix is a function of $A$, so it commutes with $A$.
+Therefore, the two homogeneous terms cancel:
+
+```math
+-Ae^{-At}\mathbf{z}(t)+e^{-At}A\mathbf{z}(t)=0.
+```
+
+What remains is
+
+```math
+\boxed{
+\frac{d}{dt}\left(e^{-At}\mathbf{z}(t)\right)
+=e^{-At}B u_k
+}.
+```
+
+This is the matrix form of the integrating-factor method for a first-order
+linear differential equation. Integrate both sides from $t_k$ to
+$t_{k+1}$:
+
+```math
+e^{-At_{k+1}}\mathbf{z}_{k+1}
+-e^{-At_k}\mathbf{z}_k
+=\int_{t_k}^{t_{k+1}}e^{-At}B u_k\,dt.
+```
+
+Multiply by $e^{At_{k+1}}$ and rearrange:
+
+```math
+\mathbf{z}_{k+1}
+=e^{A(t_{k+1}-t_k)}\mathbf{z}_k
++\int_{t_k}^{t_{k+1}}
+e^{A(t_{k+1}-t)}B u_k\,dt.
+```
+
+Because $t_{k+1}-t_k=T_s$, the first term is $e^{AT_s}\mathbf{z}_k$.
+For the integral, make the change of variable
+
+```math
+\rho=t_{k+1}-t,
+\qquad
+d\rho=-dt.
+```
+
+When $t=t_k$, $\rho=T_s$; when $t=t_{k+1}$, $\rho=0$. Reversing the
+integration limits gives
+
+```math
+\int_{t_k}^{t_{k+1}}
+e^{A(t_{k+1}-t)}B u_k\,dt
+=\int_0^{T_s}e^{A\rho}B u_k\,d\rho.
+```
+
+Since $u_k$ is constant over the interval, it can be taken outside the
+integral:
+
+```math
+\int_0^{T_s}e^{A\rho}B u_k\,d\rho
+=\left(\int_0^{T_s}e^{A\rho}B\,d\rho\right)u_k.
+```
+
+Consequently,
+
+```math
+\boxed{
+\mathbf{z}_{k+1}
+=e^{AT_s}\mathbf{z}_k
++\left(\int_0^{T_s}e^{A\rho}B\,d\rho\right)u_k
+}.
+```
+
+Defining
+
+```math
+A_d=e^{AT_s},
+\qquad
+B_d=\int_0^{T_s}e^{A\rho}B\,d\rho
+```
+
+produces the discrete update used by the MATLAB, Python, and Simulink
+implementations:
+
+```math
+\boxed{\mathbf{z}_{k+1}=A_d\mathbf{z}_k+B_d u_k}.
+```
+
+The physical meaning of the input term is also important. During the whole
+interval $T_s$, the constant input $u_k$ continuously injects state change
+through $B$. A small time slice $d\rho$ contributes
+
+```math
+B u_k\,d\rho,
+```
+
+but that contribution then evolves through the system dynamics before the
+sampling instant, producing
+
+```math
+e^{A\rho}B u_k\,d\rho.
+```
+
+The integral adds the contributions from every time slice in the interval.
+Therefore, $B_d u_k$ is the total state change caused by the held input over
+one complete sample period, while $A_d\mathbf{z}_k$ is the natural evolution
+of the previous state with no new input:
+
+```math
+\boxed{
+\text{next state}
+=\text{natural state evolution}
++\text{accumulated input effect}.
+}
+```
+
+The two matrices have clear meanings:
+
+- $A_d$ describes how the existing displacement and velocity evolve over one
+  sample when the input is zero;
+- $B_d$ describes the total state change caused by a constant unit input held
+  over one complete sample interval.
+
+For this sensor model,
+
+```math
+A=\begin{bmatrix}0&1\\-k&-r\end{bmatrix},
+\qquad
+B=\begin{bmatrix}0\\1\end{bmatrix}.
+```
+
+The implementation computes $A_d$ and $B_d$ together with one augmented
+matrix exponential:
+
+```math
+M=
+\begin{bmatrix}
+A&B\\
+0&0
+\end{bmatrix},
+\qquad
+e^{MT_s}=
+\begin{bmatrix}
+A_d&B_d\\
+0&1
+\end{bmatrix}.
+```
+
+To see why this works, augment the state with the held input value. During
+one sample interval, $u_k$ is constant, so its derivative is zero:
+
+```math
+\mathbf{w}(t)=
+\begin{bmatrix}\mathbf{z}(t)\\u_k\end{bmatrix},
+\qquad
+\dot{\mathbf{w}}(t)=
+\begin{bmatrix}A&B\\0&0\end{bmatrix}\mathbf{w}(t).
+```
+
+The upper-right block of the exponential is the response to a unit held
+input, and multiplying it by $u_k$ gives the response to the actual held
+input. Thus, the augmented exponential collects both the homogeneous state
+transition and the integrated input response in its upper blocks. Therefore,
+the MATLAB implementation
+`discretize_sensor_model.m` and the Python implementation
+`discrete_sensor_model.py` produce the same $A_d$ and $B_d$ values as the
+Simulink `Discrete State-Space` block.
+
+If $A$ is invertible, one may also write
+
+```math
+B_d=A^{-1}(A_d-I)B.
+```
+
+The augmented-exponential method is preferred here because it computes both
+matrices in one operation and remains well-defined when $A$ is singular. It
+also avoids introducing a separate special case into the MATLAB and Python
+reference implementations.
+
+The ZOH update is exact for the assumed piecewise-constant input and the
+linear continuous model, up to floating-point arithmetic. It does not mean
+that every arbitrary continuous input is reproduced exactly: a rapidly
+varying input between samples is replaced by its held sample value. The sample
+time $T_s$ therefore controls the interface bandwidth and computational rate.
+
+For the unit step experiment, $u_k$ changes from zero to one at the sample
+whose time is $t_k=1\ \mathrm{s}$. Before that sample, the discrete model
+propagates the zero-input state. From that sample onward, it applies the same
+constant-input update at every step. This is why the fixed-step trajectory
+closely follows the continuous reference while remaining suitable for a
+deterministic generated-code loop.
+
+### Closed-form $A_d$ for the current underdamped example
+
+For the main parameters $k=1.2$ and $r=0.2$, the continuous state matrix is
+
+```math
+A=\begin{bmatrix}0&1\\-1.2&-0.2\end{bmatrix}.
+```
+
+Define
+
+```math
+\alpha=\frac{r}{2}=0.1,
+\qquad
+\omega_d=\sqrt{k-\alpha^2}=\sqrt{1.19}
+\approx1.090871211.
+```
+
+Split the matrix into a scalar damping part and an oscillatory part:
+
+```math
+A=-\alpha I+M,
+\qquad
+M=A+\alpha I
+=\begin{bmatrix}0.1&1\\-1.2&-0.1\end{bmatrix}.
+```
+
+Multiplying $M$ by itself gives
+
+```math
+M^2
+=\begin{bmatrix}0.1&1\\-1.2&-0.1\end{bmatrix}^2
+=\begin{bmatrix}-1.19&0\\0&-1.19\end{bmatrix}
+=-\omega_d^2 I.
+```
+
+This identity makes the matrix exponential behave like the ordinary
+exponential of a complex number. Since $I$ and $M$ commute,
+
+```math
+e^{At}=e^{-\alpha t}e^{Mt}.
+```
+
+Expand the second factor in a Taylor series. The even powers use
+$M^{2n}=(-\omega_d^2)^nI$ and form a cosine series; the odd powers use
+$M^{2n+1}=(-\omega_d^2)^nM$ and form a sine series:
+
+```math
+e^{Mt}
+=I\cos(\omega_d t)
++\frac{M}{\omega_d}\sin(\omega_d t).
+```
+
+Therefore, for this underdamped second-order system,
+
+```math
+\boxed{
+e^{At}=e^{-\alpha t}
+\left[I\cos(\omega_d t)
++\frac{M}{\omega_d}\sin(\omega_d t)\right].
+}
+```
+
+This expression has the expected physical structure: $e^{-\alpha t}$ is the
+decaying envelope caused by damping, while the sine and cosine terms describe
+the oscillatory exchange between displacement and velocity.
+
+### Numerical $A_d$ and $B_d$ for $T_s=0.005\ \mathrm{s}$
+
+Let
+
+```math
+\theta=\omega_dT_s
+\approx1.090871211(0.005)
+\approx0.005454356.
+```
+
+Substituting the closed-form exponential into $A_d=e^{AT_s}$ gives
+
+```math
+A_d=e^{-\alpha T_s}
+\begin{bmatrix}
+\cos\theta+\dfrac{\alpha}{\omega_d}\sin\theta
+&\dfrac{1}{\omega_d}\sin\theta\\[6pt]
+-\dfrac{k}{\omega_d}\sin\theta
+&\cos\theta-\dfrac{\alpha}{\omega_d}\sin\theta
+\end{bmatrix}.
+```
+
+For the repository's default sample time,
+
+```math
+e^{-\alpha T_s}=e^{-0.0005}\approx0.999500125,
+```
+
+and the resulting matrix is
+
+```math
+\boxed{
+A_d\approx
+\begin{bmatrix}
+0.999985005036&0.004997475846\\
+-0.005996971015&0.998985509867
+\end{bmatrix}.
+}
+```
+
+These are the values placed in the `Discrete State-Space` block by
+`build_models.m`.
+
+### Computing $B_d$ from $A_d$
+
+The definition of $B_d$ is
+
+```math
+B_d=\int_0^{T_s}e^{A\tau}B\,d\tau.
+```
+
+For the present matrix $A$, the determinant is $k=1.2$, so $A$ is invertible.
+Using
+
+```math
+\frac{d}{d\tau}e^{A\tau}=Ae^{A\tau},
+```
+
+we obtain
+
+```math
+\int_0^{T_s}e^{A\tau}\,d\tau
+=A^{-1}\left(e^{AT_s}-I\right).
+```
+
+Thus, for this particular example,
+
+```math
+\boxed{B_d=A^{-1}(A_d-I)B.}
+```
+
+The inverse of
+
+```math
+A=\begin{bmatrix}0&1\\-1.2&-0.2\end{bmatrix}
+```
+
+is
+
+```math
+A^{-1}
+=\begin{bmatrix}-0.1666667&-0.8333333\\1&0\end{bmatrix}.
+```
+
+Since $B=[0\ \ 1]^{\mathsf{T}}$, multiplying $(A_d-I)B$ selects the second
+column of $A_d-I$:
+
+```math
+(A_d-I)B
+=\begin{bmatrix}
+0.004997475846\\
+-0.001014490133
+\end{bmatrix}.
+```
+
+Therefore,
+
+```math
+\boxed{
+B_d\approx
+\begin{bmatrix}
+1.249580314\times10^{-5}\\
+0.004997475846
+\end{bmatrix}.
+}
+```
+
+The production implementation still uses the augmented matrix exponential to
+compute $A_d$ and $B_d$ together. The inverse formula is included because it
+makes the current numerical example easy to verify by hand; it should not be
+used without checking that $A$ is invertible.
+
+### The final discrete update
+
+With $\mathbf{z}_k=[x_k\ \ y_k]^{\mathsf{T}}$, the fixed-step model is
+
+```math
+x_{k+1}
+=0.999985005036x_k
++0.004997475846y_k
++1.249580314\times10^{-5}u_k,
+```
+
+```math
+y_{k+1}
+=-0.005996971015x_k
++0.998985509867y_k
++0.004997475846u_k.
+```
+
+These are the two state updates represented by the generated C++ step
+function. The C++ syntax may contain arrays, temporary variables, and model
+data structures, but the numerical operation is this matrix recurrence.
+
+### Physical sanity check for $B_d$
+
+For a small sample time, the held input first changes velocity. Ignoring the
+spring and damping for a moment,
+
+```math
+\Delta y\approx u_kT_s,
+```
+
+so the second component should be close to $T_s=0.005$. Indeed,
+
+```math
+B_{d,2}=0.004997475846\approx0.005.
+```
+
+The position changes because the newly created velocity acts during the same
+interval:
+
+```math
+\Delta x\approx\frac{1}{2}u_kT_s^2.
+```
+
+For $T_s=0.005$,
+
+```math
+\frac{1}{2}T_s^2=1.25\times10^{-5},
+```
+
+which agrees with
+
+```math
+B_{d,1}=1.249580314\times10^{-5}.
+```
+
+This is why the exact ZOH method has a small nonzero position component in
+$B_d$: the input affects velocity first, and that velocity already affects
+position before the sample interval ends.
+
+### Comparison with forward Euler
+
+For comparison, forward Euler would approximate the continuous equation by
+
+```math
+\mathbf{z}_{k+1}
+\approx\mathbf{z}_k+T_s(A\mathbf{z}_k+B u_k),
+```
+
+which gives
+
+```math
+A_d^{\mathrm{Euler}}=I+AT_s
+=\begin{bmatrix}1&0.005\\-0.006&0.999\end{bmatrix},
+```
+
+```math
+B_d^{\mathrm{Euler}}=BT_s
+=\begin{bmatrix}0\\0.005\end{bmatrix}.
+```
+
+The Euler matrices are close because $T_s$ is small, but they are not equal to
+the exact ZOH matrices. In particular, Euler sets the position component of
+$B_d$ to zero, as if the input could not affect position during the current
+sample. Exact ZOH includes the within-interval velocity change and therefore
+captures the additional displacement of approximately
+$\frac{1}{2}u_kT_s^2$.
+
 ## 9. Signal-chain equations
 
 The signal-chain study keeps the original gain model as a useful baseline and adds a simplified differential capacitive model. This makes the approximation visible instead of silently replacing one model with another.
