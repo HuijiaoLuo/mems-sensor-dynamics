@@ -37,6 +37,94 @@ The sine-response models use the workspace variable `omega`, which can be
 changed before each run. The parameter values are illustrative and are not
 calibrated parameters of a commercial MEMS device.
 
+## How to run the legacy MATLAB code
+
+The `.slx` models require MATLAB with Simulink. The ordinary `.m` functions
+and scripts require MATLAB; they do not require the main automated workflow.
+From the repository root, prepare the MATLAB path and Base Workspace with:
+
+```matlab
+repo_root = pwd;
+addpath(fullfile(repo_root, 'legacy'));
+addpath(fullfile(repo_root, 'legacy', 'matlab'));
+run(fullfile(repo_root, 'legacy', 'matlab', ...
+    'init_manual_demo_params.m'));
+```
+
+### Run a hand-built Simulink model
+
+Open one of the manual models and run it from the Simulink editor:
+
+```matlab
+open_system(fullfile(repo_root, 'legacy', 'sensor_step_response.slx'));
+open_system(fullfile(repo_root, 'legacy', 'sensor_sine_response.slx'));
+open_system(fullfile(repo_root, 'legacy', ...
+    'sensor_capacitive_transduction_manual.slx'));
+```
+
+For the hand-built sine model, change the excitation frequency in the Base
+Workspace before pressing Run:
+
+```matlab
+omega = 0.3;   % below resonance
+omega = 1.1;   % near resonance
+omega = 3.0;   % above resonance
+```
+
+The Scope and XY Graph are the primary outputs of these manual models. The
+capacitive model additionally exposes the exact/linearized capacitance and the
+readout stages for visual inspection.
+
+### Run the MATLAB reference functions
+
+The original autonomous oscillator can be integrated directly with `ode45`:
+
+```matlab
+tspan = [0, Tsim];
+[t, state] = ode45( ...
+    @(time, state) harmonic_oscillator_model(time, state, k, r), ...
+    tspan, [x0; y0]);
+
+x = state(:, 1);
+y = state(:, 2);
+plot(t, x, t, y);
+legend('x(t)', 'y(t)');
+grid on;
+```
+
+`generic_second_order_model.m` provides the same first-order state-space
+pattern using explicit coefficients `a`, `b`, `c`, and `d`. The live script
+`harmonic_oscillator_dynamics.mlx` is an additional exploratory explanation
+of the original oscillator.
+
+### Run one frequency-response measurement
+
+After adding the `legacy` folder to the MATLAB path and loading the shared
+parameters, measure one frequency point from the hand-built
+`sensor_frequency_sweep.slx` model:
+
+```matlab
+result = measure_frequency_point( ...
+    'sensor_frequency_sweep', omega, k, r, Ain);
+```
+
+The returned structure contains the measured and theoretical magnitudes and
+phases, simulation time, poles, and measurement errors. The helper waits for
+transients to decay and fits the final five sinusoidal periods.
+
+### Run the complete manual frequency sweep
+
+Run the sweep script from the repository root:
+
+```matlab
+run(fullfile(repo_root, 'legacy', 'run_frequency_sweep.m'));
+```
+
+This calls `measure_frequency_point.m` for each value in
+`omega_values = logspace(-1, 1, 20)`, then opens the analytical-versus-
+Simulink magnitude and phase plots. The script does not fabricate or save
+result images; the plots are generated only when you execute it locally.
+
 ## Manual-learning progression
 
 ### A. Hand-built second-order dynamics
