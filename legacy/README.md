@@ -75,6 +75,70 @@ The Scope and XY Graph are the primary outputs of these manual models. The
 capacitive model additionally exposes the exact/linearized capacitance and the
 readout stages for visual inspection.
 
+### Run the manual differential-capacitive experiment
+
+The manual capacitive model is run directly from the Base Workspace. Use the
+following sequence from the repository root:
+
+```matlab
+run(fullfile(repo_root, 'legacy', 'matlab', ...
+    'init_manual_demo_params.m'));
+
+alpha_x = alpha_x_small_signal;
+
+model_file = fullfile(repo_root, 'legacy', ...
+    'sensor_capacitive_transduction_manual.slx');
+open_system(model_file);
+set_param('sensor_capacitive_transduction_manual', ...
+    'StopTime', num2str(Tsim));
+sim('sensor_capacitive_transduction_manual');
+```
+
+The model contains the following manually connected stages:
+
+```text
+u(t) -> mechanical dynamics -> x
+     -> xi = alpha_x*x
+     -> g1 = d-xi, g2 = d+xi
+     -> C1, C2 -> DeltaC_exact and DeltaC_linear
+     -> ideal C-to-V readout
+     -> offset -> noise -> bandwidth -> saturation
+     -> ADC code -> reconstructed voltage -> x_hat
+```
+
+Use the scopes and XY Graph in the model to inspect the mechanical response,
+the exact and linearized differential capacitance, the analogue front-end,
+the ADC reconstruction, and the final comparison between $x(t)$ and
+$\widehat{x}(t)$. The model uses Scope blocks rather than exporting a
+pre-generated result file, so the plots appear only after you run the model
+locally.
+
+To compare the two capacitance regimes, rerun the model with:
+
+```matlab
+alpha_x = alpha_x_small_signal;
+sim('sensor_capacitive_transduction_manual');
+
+alpha_x = alpha_x_nonlinear;
+sim('sensor_capacitive_transduction_manual');
+```
+
+The small-signal setting should make $\Delta C_{\mathrm{exact}}$ and
+$\Delta C_{\mathrm{linear}}$ nearly overlap. The nonlinear setting makes
+their deviation easier to see. To isolate front-end effects, compare:
+
+```matlab
+tau_amp = tau_amp_default;
+sim('sensor_capacitive_transduction_manual');
+
+tau_amp = tau_amp_strong_filter;
+sim('sensor_capacitive_transduction_manual');
+```
+
+The narrow default rail `V_max = 0.03` makes clipping visible. The final
+reconstructed displacement can therefore underestimate a large peak: digital
+calibration cannot recover information removed by analogue saturation.
+
 ### Run the MATLAB reference functions
 
 The original autonomous oscillator can be integrated directly with `ode45`:
