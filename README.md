@@ -27,28 +27,28 @@ verification:
 
 ```mermaid
 flowchart LR
-    U[Input u(t)] --> M[Mechanical plant<br/>mass-spring-damper]
-    M --> S[States<br/>displacement x, velocity y]
+    U["Input u(t)"] --> M["Mechanical plant<br/>mass-spring-damper"]
+    M --> S["States<br/>displacement x, velocity y"]
 
-    S --> X[Displacement x]
-    X --> XI[Physical displacement ξ]
-    XI --> C[Differential capacitance<br/>C1, C2, ΔC]
-    C --> R[Ideal readout front-end<br/>C-to-V, noise, bandwidth, rails]
-    R --> A[ADC and digital calibration]
-    A --> O[Calibrated sensor output]
+    S --> X["Displacement x"]
+    X --> XI["Physical displacement ξ"]
+    XI --> C["Differential capacitance<br/>C1, C2, ΔC"]
+    C --> R["Ideal readout front-end<br/>C-to-V, noise, bandwidth, rails"]
+    R --> A["ADC and digital calibration"]
+    A --> O["Calibrated sensor output"]
 
-    M -. continuous reference .-> T[MATLAB / Simulink<br/>continuous model]
-    S --> Z[Exact-ZOH fixed-step<br/>dynamics core]
-    Z --> SM[Simulink fixed-step<br/>code-generation model]
-    SM --> G[Simulink Coder<br/>generated C++]
-    Z --> MR[MATLAB exact-ZOH<br/>reference]
-    Z --> Q[Portable C++<br/>implementation]
-    S -. same equations .-> P[Python / SciPy<br/>reference]
-    P --> V[Local runtime<br/>cross-validation]
+    M -.-> T["MATLAB / Simulink<br/>continuous model"]
+    S --> Z["Exact-ZOH fixed-step<br/>dynamics core"]
+    Z --> SM["Simulink fixed-step<br/>code-generation model"]
+    SM --> G["Simulink Coder<br/>generated C++"]
+    Z --> MR["MATLAB exact-ZOH<br/>reference"]
+    Z --> Q["Portable C++<br/>implementation"]
+    S -.-> P["Python / SciPy<br/>reference"]
+    P --> V["Local runtime<br/>cross-validation"]
     G --> V
     SM --> V
     MR --> V
-    Q --> I[GitHub Actions CI]
+    Q --> I["GitHub Actions CI"]
     P --> I
 ```
 
