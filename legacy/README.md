@@ -157,9 +157,7 @@ grid on;
 ```
 
 `generic_second_order_model.m` provides the same first-order state-space
-pattern using explicit coefficients `a`, `b`, `c`, and `d`. The live script
-`harmonic_oscillator_dynamics.mlx` is an additional exploratory explanation
-of the original oscillator.
+pattern using explicit coefficients `a`, `b`, `c`, and `d`.
 
 ### Run one frequency-response measurement
 
