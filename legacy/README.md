@@ -423,10 +423,7 @@ For `k = 1.2` and `r = 0.2`, the response shows:
 
 - low-frequency behavior close to the static gain $1/k$;
 - a resonance peak near
-
-  ```math
-  \omega_n=\sqrt{k}\approx1.095\ \mathrm{rad/s};
-  ```
+  $\omega_n=\sqrt{k}\approx1.095\ \mathrm{rad/s}$;
 
 - a high-frequency roll-off approaching $-40\ \mathrm{dB/decade}$;
 - a phase transition from approximately $0^{\circ}$ to $-180^{\circ}$.
