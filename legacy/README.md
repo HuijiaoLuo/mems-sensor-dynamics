@@ -139,26 +139,6 @@ The narrow default rail `V_max = 0.03` makes clipping visible. The final
 reconstructed displacement can therefore underestimate a large peak: digital
 calibration cannot recover information removed by analogue saturation.
 
-### Run the MATLAB reference functions
-
-The original autonomous oscillator can be integrated directly with `ode45`:
-
-```matlab
-tspan = [0, Tsim];
-[t, state] = ode45( ...
-    @(time, state) harmonic_oscillator_model(time, state, k, r), ...
-    tspan, [x0; y0]);
-
-x = state(:, 1);
-y = state(:, 2);
-plot(t, x, t, y);
-legend('x(t)', 'y(t)');
-grid on;
-```
-
-`generic_second_order_model.m` provides the same first-order state-space
-pattern using explicit coefficients `a`, `b`, `c`, and `d`.
-
 ### Run one frequency-response measurement
 
 After adding the `legacy` folder to the MATLAB path and loading the shared
