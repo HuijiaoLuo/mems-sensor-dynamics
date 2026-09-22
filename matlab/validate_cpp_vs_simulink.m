@@ -48,9 +48,16 @@ if ~all(ismember(required_columns, cpp.Properties.VariableNames))
 end
 
 %% 2. Run fixed-step Simulink model
+% model_file = params.model_files.codegen;
+% 
+% if exist(model_file, 'file') ~= 2
+%     error('validate_cpp_vs_simulink:MissingModel', ...
+%         'Simulink model not found: %s', model_file);
+% end
+
 model_file = params.model_files.codegen;
 
-if exist(model_file, 'file') ~= 2
+if ~isfile(model_file)
     error('validate_cpp_vs_simulink:MissingModel', ...
         'Simulink model not found: %s', model_file);
 end
